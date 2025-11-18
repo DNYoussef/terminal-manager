@@ -1,0 +1,25 @@
+# Phase 5, Task 5 - Export/Import Dependencies
+# Install with: pip install -r requirements-export-import.txt
+
+# Core FastAPI (should already be installed)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+
+# File Format Libraries
+pandas>=2.1.0          # CSV export/import with DataFrame
+PyYAML>=6.0.1          # YAML serialization/deserialization
+openpyxl>=3.1.2        # Optional: Excel support (future enhancement)
+
+# Authentication & Database (should already be installed)
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6  # Required for file uploads
+
+# Validation
+pydantic[email]>=2.0.0
+email-validator>=2.0.0
+
+# Performance
+aiofiles>=23.2.1       # Async file operations (optional)

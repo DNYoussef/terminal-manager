@@ -1,0 +1,626 @@
+/**
+ * Best-of-N Competitive Execution Pipeline
+ *
+ * Orchestrates N agents in parallel E2B sandboxes, compares outputs,
+ * and selects the best result using multi-criteria scoring.
+ *
+ * Features:
+ * - Parallel agent execution in isolated sandboxes
+ * - Multi-criteria artifact comparison
+ * - Automatic winner selection with weighted scoring
+ * - Human override capability
+ * - Memory MCP storage for learning
+ *
+ * @module hooks/12fa/best-of-n-pipeline
+ */
+
+// Use Node.js built-in crypto instead of uuid package (ESM compatibility fix)
+const crypto = require('crypto');
+const uuidv4 = () => crypto.randomUUID();
+const { taggedMemoryStore, memoryRetrieve } = require('./memory-mcp-tagging-protocol');
+const { createLogger } = require('./structured-logger');
+
+const logger = createLogger('best-of-n-pipeline');
+
+// Scoring weights for multi-criteria evaluation
+const SCORING_WEIGHTS = {
+  code_quality: 0.4,
+  test_coverage: 0.3,
+  documentation: 0.2,
+  performance: 0.1
+};
+
+// E2B sandbox configuration
+const SANDBOX_CONFIG = {
+  timeout_ms: 600000, // 10 minutes
+  memory_mb: 2048,
+  cpu_cores: 1,
+  cleanup_on_complete: true
+};
+
+/**
+ * Main orchestrator for best-of-N competitive execution
+ *
+ * @param {Object} config - Execution configuration
+ * @param {string} config.task - Task description
+ * @param {number} config.n - Number of agents to spawn (default: 3)
+ * @param {Array<string>} config.agents - Agent types to use
+ * @param {Object} config.context - Task context and constraints
+ * @param {Object} config.scoring - Custom scoring weights
+ * @returns {Promise<Object>} Execution results with winner selection
+ */
+async function executeBestOfN(config) {
+  const taskId = uuidv4();
+  const startTime = Date.now();
+
+  logger.info('Starting best-of-N competitive execution', {
+    task_id: taskId,
+    n: config.n || 3,
+    agents: config.agents,
+    task: config.task
+  });
+
+  try {
+    // Step 1: Parse and validate configuration
+    const validatedConfig = await validateConfig(config);
+
+    // Step 2: Spawn N agents in parallel sandboxes
+    const agentPromises = await spawnCompetitiveAgents(validatedConfig, taskId);
+
+    // Step 3: Execute agents and collect artifacts
+    const executionResults = await Promise.allSettled(agentPromises);
+
+    // Step 4: Filter successful executions
+    const successfulResults = executionResults
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    if (successfulResults.length === 0) {
+      throw new Error('All agent executions failed');
+    }
+
+    logger.info('Agent executions completed', {
+      task_id: taskId,
+      successful: successfulResults.length,
+      failed: executionResults.length - successfulResults.length
+    });
+
+    // Step 5: Collect and compare artifacts
+    const comparisonResults = await compareArtifacts(successfulResults, validatedConfig);
+
+    // Step 6: Score each agent's output
+    const scoredResults = await scoreAgentOutputs(comparisonResults, validatedConfig.scoring);
+
+    // Step 7: Select winner based on scores
+    const winner = selectWinner(scoredResults);
+
+    // Step 8: Store results in Memory MCP
+    await storeResultsInMemory(taskId, {
+      winner,
+      runners_up: scoredResults.filter(r => r.agent_id !== winner.agent_id),
+      task: config.task,
+      execution_time_ms: Date.now() - startTime
+    });
+
+    logger.info('Best-of-N execution completed', {
+      task_id: taskId,
+      winner_agent: winner.agent_id,
+      winner_score: winner.score,
+      total_time_ms: Date.now() - startTime
+    });
+
+    return {
+      task_id: taskId,
+      winner,
+      all_results: scoredResults,
+      execution_time_ms: Date.now() - startTime,
+      success: true
+    };
+
+  } catch (error) {
+    logger.error('Best-of-N execution failed', {
+      task_id: taskId,
+      error: error.message,
+      stack: error.stack
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Validate and normalize configuration
+ */
+async function validateConfig(config) {
+  const defaults = {
+    n: 3,
+    agents: ['coder', 'backend-dev', 'ml-developer'],
+    scoring: SCORING_WEIGHTS,
+    sandbox: SANDBOX_CONFIG,
+    context: {}
+  };
+
+  const validated = {
+    ...defaults,
+    ...config,
+    scoring: { ...defaults.scoring, ...config.scoring },
+    sandbox: { ...defaults.sandbox, ...config.sandbox }
+  };
+
+  // Validate N is between 2 and 10
+  if (validated.n < 2 || validated.n > 10) {
+    throw new Error('N must be between 2 and 10');
+  }
+
+  // Ensure we have enough agent types
+  if (validated.agents.length < validated.n) {
+    // Duplicate agents if needed
+    while (validated.agents.length < validated.n) {
+      validated.agents.push(...validated.agents);
+    }
+    validated.agents = validated.agents.slice(0, validated.n);
+  }
+
+  return validated;
+}
+
+/**
+ * Spawn N agents in parallel E2B sandboxes
+ */
+async function spawnCompetitiveAgents(config, taskId) {
+  const agentPromises = [];
+
+  for (let i = 0; i < config.n; i++) {
+    const agentId = uuidv4();
+    const agentType = config.agents[i];
+
+    logger.info('Spawning competitive agent', {
+      task_id: taskId,
+      agent_id: agentId,
+      agent_type: agentType,
+      index: i + 1,
+      total: config.n
+    });
+
+    const promise = executeAgentInSandbox({
+      task_id: taskId,
+      agent_id: agentId,
+      agent_type: agentType,
+      task: config.task,
+      context: config.context,
+      sandbox_config: config.sandbox
+    });
+
+    agentPromises.push(promise);
+  }
+
+  return agentPromises;
+}
+
+/**
+ * Execute a single agent in an isolated E2B sandbox
+ */
+async function executeAgentInSandbox(params) {
+  const { task_id, agent_id, agent_type, task, context, sandbox_config } = params;
+  const startTime = Date.now();
+
+  logger.info('Starting agent sandbox execution', {
+    task_id,
+    agent_id,
+    agent_type
+  });
+
+  try {
+    // Create isolated E2B sandbox
+    const sandbox = await createE2BSandbox(sandbox_config);
+
+    logger.info('E2B sandbox created', {
+      task_id,
+      agent_id,
+      sandbox_id: sandbox.id
+    });
+
+    // Execute agent task in sandbox
+    const execution = await runAgentTask(sandbox, {
+      agent_type,
+      task,
+      context,
+      timeout_ms: sandbox_config.timeout_ms
+    });
+
+    // Collect artifacts from sandbox
+    const artifacts = await collectArtifacts(sandbox, execution);
+
+    // Calculate basic metrics
+    const metrics = {
+      execution_time_ms: Date.now() - startTime,
+      tokens_used: execution.tokens_used || 0,
+      cost_usd: calculateCost(execution.tokens_used || 0),
+      memory_used_mb: execution.memory_used_mb || 0
+    };
+
+    // Cleanup sandbox
+    if (sandbox_config.cleanup_on_complete) {
+      await sandbox.cleanup();
+    }
+
+    logger.info('Agent sandbox execution completed', {
+      task_id,
+      agent_id,
+      execution_time_ms: metrics.execution_time_ms
+    });
+
+    return {
+      task_id,
+      agent_id,
+      agent_type,
+      artifacts,
+      metrics,
+      sandbox_id: sandbox.id,
+      success: true
+    };
+
+  } catch (error) {
+    logger.error('Agent sandbox execution failed', {
+      task_id,
+      agent_id,
+      agent_type,
+      error: error.message
+    });
+
+    return {
+      task_id,
+      agent_id,
+      agent_type,
+      error: error.message,
+      success: false
+    };
+  }
+}
+
+/**
+ * Create an isolated E2B sandbox environment
+ */
+async function createE2BSandbox(config) {
+  // Mock E2B sandbox creation (replace with actual E2B SDK)
+  const sandboxId = uuidv4();
+
+  return {
+    id: sandboxId,
+    config,
+    execute: async (command) => {
+      // Simulate command execution
+      return {
+        stdout: `Executed: ${command}`,
+        stderr: '',
+        exit_code: 0
+      };
+    },
+    readFile: async (path) => {
+      // Simulate file reading
+      return `Content of ${path}`;
+    },
+    writeFile: async (path, content) => {
+      // Simulate file writing
+      return true;
+    },
+    listFiles: async () => {
+      // Simulate file listing
+      return [];
+    },
+    cleanup: async () => {
+      // Simulate cleanup
+      return true;
+    }
+  };
+}
+
+/**
+ * Run agent task within sandbox
+ */
+async function runAgentTask(sandbox, params) {
+  const { agent_type, task, context, timeout_ms } = params;
+
+  // Simulate agent execution (replace with actual agent invocation)
+  const execution = {
+    agent_type,
+    task,
+    output: {
+      code_files: [],
+      test_files: [],
+      doc_files: []
+    },
+    tokens_used: Math.floor(Math.random() * 50000) + 10000,
+    memory_used_mb: Math.floor(Math.random() * 1024) + 512,
+    success: true
+  };
+
+  return execution;
+}
+
+/**
+ * Collect artifacts from sandbox execution
+ */
+async function collectArtifacts(sandbox, execution) {
+  const artifacts = {
+    code: {
+      files: [],
+      quality_score: 0,
+      lines_of_code: 0
+    },
+    tests: {
+      files: [],
+      count: 0,
+      coverage: 0,
+      passing: 0
+    },
+    docs: {
+      files: [],
+      completeness: 0,
+      word_count: 0
+    }
+  };
+
+  // Collect code files
+  const codeFiles = await sandbox.listFiles();
+  artifacts.code.files = codeFiles.filter(f => f.endsWith('.js') || f.endsWith('.py'));
+  artifacts.code.lines_of_code = Math.floor(Math.random() * 500) + 100;
+
+  // Mock quality score (replace with actual Connascence analysis)
+  artifacts.code.quality_score = Math.floor(Math.random() * 30) + 70; // 70-100
+
+  // Collect test files
+  artifacts.tests.files = codeFiles.filter(f => f.includes('test') || f.includes('spec'));
+  artifacts.tests.count = artifacts.tests.files.length * 5;
+  artifacts.tests.coverage = Math.floor(Math.random() * 30) + 70; // 70-100
+  artifacts.tests.passing = artifacts.tests.count;
+
+  // Collect documentation files
+  artifacts.docs.files = codeFiles.filter(f => f.endsWith('.md') || f.endsWith('.txt'));
+  artifacts.docs.word_count = artifacts.docs.files.length * 500;
+  artifacts.docs.completeness = Math.floor(Math.random() * 30) + 70; // 70-100
+
+  return artifacts;
+}
+
+/**
+ * Compare artifacts across all agents
+ */
+async function compareArtifacts(results, config) {
+  logger.info('Comparing artifacts across agents', {
+    agent_count: results.length
+  });
+
+  const comparison = results.map(result => ({
+    ...result,
+    comparison: {
+      code_metrics: analyzeCodeQuality(result.artifacts.code),
+      test_metrics: analyzeTestQuality(result.artifacts.tests),
+      doc_metrics: analyzeDocQuality(result.artifacts.docs),
+      performance_metrics: analyzePerformance(result.metrics)
+    }
+  }));
+
+  return comparison;
+}
+
+/**
+ * Analyze code quality metrics
+ */
+function analyzeCodeQuality(code) {
+  return {
+    quality_score: code.quality_score,
+    lines_of_code: code.lines_of_code,
+    files_count: code.files.length,
+    normalized_score: code.quality_score / 100
+  };
+}
+
+/**
+ * Analyze test quality metrics
+ */
+function analyzeTestQuality(tests) {
+  return {
+    coverage: tests.coverage,
+    test_count: tests.count,
+    passing_rate: tests.passing / tests.count,
+    normalized_score: (tests.coverage / 100) * (tests.passing / tests.count)
+  };
+}
+
+/**
+ * Analyze documentation quality metrics
+ */
+function analyzeDocQuality(docs) {
+  return {
+    completeness: docs.completeness,
+    word_count: docs.word_count,
+    files_count: docs.files.length,
+    normalized_score: docs.completeness / 100
+  };
+}
+
+/**
+ * Analyze performance metrics
+ */
+function analyzePerformance(metrics) {
+  // Normalize execution time (lower is better)
+  const timeScore = Math.max(0, 1 - (metrics.execution_time_ms / 600000));
+
+  return {
+    execution_time_ms: metrics.execution_time_ms,
+    tokens_used: metrics.tokens_used,
+    cost_usd: metrics.cost_usd,
+    normalized_score: timeScore
+  };
+}
+
+/**
+ * Score all agent outputs using weighted criteria
+ */
+async function scoreAgentOutputs(results, weights) {
+  logger.info('Scoring agent outputs', {
+    agent_count: results.length,
+    weights
+  });
+
+  const scored = results.map(result => {
+    const score =
+      (result.comparison.code_metrics.normalized_score * weights.code_quality) +
+      (result.comparison.test_metrics.normalized_score * weights.test_coverage) +
+      (result.comparison.doc_metrics.normalized_score * weights.documentation) +
+      (result.comparison.performance_metrics.normalized_score * weights.performance);
+
+    return {
+      ...result,
+      score: Math.round(score * 100), // Convert to 0-100 scale
+      breakdown: {
+        code_quality: result.comparison.code_metrics.normalized_score * weights.code_quality * 100,
+        test_coverage: result.comparison.test_metrics.normalized_score * weights.test_coverage * 100,
+        documentation: result.comparison.doc_metrics.normalized_score * weights.documentation * 100,
+        performance: result.comparison.performance_metrics.normalized_score * weights.performance * 100
+      }
+    };
+  });
+
+  // Sort by score descending
+  return scored.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Select winner from scored results
+ */
+function selectWinner(scoredResults) {
+  if (scoredResults.length === 0) {
+    throw new Error('No results to select winner from');
+  }
+
+  const winner = scoredResults[0];
+
+  logger.info('Winner selected', {
+    agent_id: winner.agent_id,
+    agent_type: winner.agent_type,
+    score: winner.score,
+    breakdown: winner.breakdown
+  });
+
+  return winner;
+}
+
+/**
+ * Store execution results in Memory MCP for learning
+ */
+async function storeResultsInMemory(taskId, results) {
+  const namespace = `best_of_n/task_${taskId}`;
+
+  // Store winner
+  await taggedMemoryStore('best-of-n-orchestrator', JSON.stringify({
+    type: 'winner',
+    task_id: taskId,
+    agent_id: results.winner.agent_id,
+    agent_type: results.winner.agent_type,
+    score: results.winner.score,
+    breakdown: results.winner.breakdown,
+    artifacts: results.winner.artifacts,
+    metrics: results.winner.metrics
+  }), {
+    namespace,
+    key: 'winner',
+    category: 'competitive_execution',
+    intent: 'best_of_n_winner'
+  });
+
+  // Store runners-up
+  for (const runnerUp of results.runners_up) {
+    await taggedMemoryStore('best-of-n-orchestrator', JSON.stringify({
+      type: 'runner_up',
+      task_id: taskId,
+      agent_id: runnerUp.agent_id,
+      agent_type: runnerUp.agent_type,
+      score: runnerUp.score,
+      breakdown: runnerUp.breakdown
+    }), {
+      namespace,
+      key: `runner_up_${runnerUp.agent_id}`,
+      category: 'competitive_execution',
+      intent: 'best_of_n_runner_up'
+    });
+  }
+
+  // Store task metadata
+  await taggedMemoryStore('best-of-n-orchestrator', JSON.stringify({
+    type: 'task_metadata',
+    task_id: taskId,
+    task: results.task,
+    execution_time_ms: results.execution_time_ms,
+    agent_count: results.runners_up.length + 1,
+    winner_score: results.winner.score
+  }), {
+    namespace,
+    key: 'metadata',
+    category: 'competitive_execution',
+    intent: 'best_of_n_metadata'
+  });
+
+  logger.info('Results stored in Memory MCP', {
+    task_id: taskId,
+    namespace
+  });
+}
+
+/**
+ * Record human selection override
+ */
+async function recordHumanSelection(taskId, selectedAgentId, rationale) {
+  const namespace = `best_of_n/task_${taskId}`;
+
+  await taggedMemoryStore('best-of-n-orchestrator', JSON.stringify({
+    type: 'human_selection',
+    task_id: taskId,
+    selected_agent_id: selectedAgentId,
+    rationale,
+    timestamp: new Date().toISOString()
+  }), {
+    namespace,
+    key: 'human_selection',
+    category: 'competitive_execution',
+    intent: 'human_override'
+  });
+
+  logger.info('Human selection recorded', {
+    task_id: taskId,
+    selected_agent_id: selectedAgentId
+  });
+}
+
+/**
+ * Retrieve similar best-of-N results from Memory MCP
+ */
+async function retrieveSimilarResults(task, limit = 5) {
+  const results = await memoryRetrieve({
+    query: task,
+    namespace: 'best_of_n',
+    limit,
+    mode: 'planning' // Broader exploration
+  });
+
+  return results.filter(r => r.metadata?.category === 'competitive_execution');
+}
+
+/**
+ * Calculate cost based on token usage
+ */
+function calculateCost(tokens) {
+  // Assuming Claude Sonnet 4.5 pricing: $3/$15 per million tokens
+  const inputCost = (tokens * 0.7 * 3) / 1000000; // 70% input
+  const outputCost = (tokens * 0.3 * 15) / 1000000; // 30% output
+  return Math.round((inputCost + outputCost) * 100) / 100;
+}
+
+module.exports = {
+  executeBestOfN,
+  recordHumanSelection,
+  retrieveSimilarResults,
+  SCORING_WEIGHTS,
+  SANDBOX_CONFIG
+};

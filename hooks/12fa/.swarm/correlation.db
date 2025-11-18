@@ -1,0 +1,22 @@
+{
+  "pre-bash-hook": {
+    "id": "trace-cbb041b33d69",
+    "timestamp": 1762014575603
+  },
+  "post-task-hook": {
+    "id": "trace-15a51b262248",
+    "timestamp": 1762014578008
+  },
+  "post-edit-hook": {
+    "id": "trace-07bf05553a4f",
+    "timestamp": 1762014579621
+  },
+  "file-edit-structured-logger.js": {
+    "id": "trace-07bf05553a4f",
+    "timestamp": 1762014579627
+  },
+  "session-end-hook": {
+    "id": "trace-f3904fe04cc2",
+    "timestamp": 1762014581227
+  }
+}
