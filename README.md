@@ -71,17 +71,17 @@ Terminal Manager is part of a comprehensive AI-assisted development ecosystem bu
         | (hooks)                     | (API queries)
         v                             v
 +------------------------+   +------------------------+
-|  ruv-SPARC Plugin      |   |  Memory MCP Triple     |
-|  Three-Loop System     |   |  Layer System          |
+|  12-Factor Agents      |   |  Memory MCP Triple     |
+|  (ruv-SPARC)           |   |  Layer System          |
 |                        |   |                        |
-|  - 86+ specialized     |   |  - Triple-layer        |
-|    agents              |   |    retention (24h/7d/  |
-|  - SPARC methodology   |   |    30d)                |
-|  - Research -> Impl    |   |  - Semantic vector     |
-|    -> Recovery loops   |   |    search (ChromaDB)   |
-|  - Memory MCP access   |   |  - Mode-aware context  |
-|  - Auto tagging: WHO/  |   |    (Execution/Planning/|
-|    WHEN/PROJECT/WHY    |   |    Brainstorming)      |
+|  - 203 agents          |   |  - Triple-layer        |
+|  - 122 skills          |   |    retention (24h/7d/  |
+|  - 224 commands        |   |    30d+)               |
+|  - 29 playbooks        |   |  - Semantic vector     |
+|  - Three-Loop Arch     |   |    search (ChromaDB)   |
+|  - Memory MCP access   |   |  - Mode-aware (85%+)   |
+|  - WHO/WHEN/PROJECT/   |   |  - HNSW indexing       |
+|    WHY tagging         |   |  - Self-referential    |
 +------------------------+   +------------------------+
         |                             ^
         +-----------------------------+
