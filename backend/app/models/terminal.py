@@ -31,6 +31,7 @@ class Terminal(Base):
     # Relationships
     project = relationship("Project", back_populates="terminals")
     output_lines = relationship("TerminalOutput", back_populates="terminal", cascade="all, delete-orphan")
+    scheduled_claude_tasks = relationship("ScheduledClaudeTask", back_populates="terminal")
 
     def __repr__(self):
         return f"<Terminal(id={self.id}, project_id={self.project_id}, status={self.status})>"

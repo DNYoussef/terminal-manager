@@ -19,6 +19,7 @@ class Project(Base):
 
     # Relationships
     terminals = relationship("Terminal", back_populates="project", cascade="all, delete-orphan")
+    scheduled_claude_tasks = relationship("ScheduledClaudeTask", back_populates="project")
 
     def __repr__(self):
         return f"<Project(id={self.id}, name={self.name}, path={self.path})>"

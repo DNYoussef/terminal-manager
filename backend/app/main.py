@@ -9,6 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 
+# Load environment variables early
+from dotenv import load_dotenv
+load_dotenv()
+
 # Fix for Windows: Use ProactorEventLoop for subprocess support
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -17,7 +21,10 @@ if sys.platform == 'win32':
 from app.db_setup import init_db
 
 # Import routers
-from app.routers import projects, terminals, sessions, mcp, scheduled_tasks, memory, logs, events, best_of_n, metrics, health
+from app.routers import projects, terminals, sessions, mcp, scheduled_tasks, memory, logs, events, best_of_n, metrics, health, scheduled_claude_tasks
+
+# Import scheduler service
+from app.services.claude_scheduler import init_scheduler, shutdown_scheduler
 
 
 @asynccontextmanager
@@ -29,10 +36,18 @@ async def lifespan(app: FastAPI):
     # Initialize database tables
     init_db()
 
+    # Initialize Claude Code scheduler
+    init_scheduler()
+    print("Claude Code Scheduler started")
+
     yield
 
     # Shutdown
     print("Shutting down Terminal Manager API...")
+
+    # Shutdown scheduler gracefully
+    shutdown_scheduler()
+    print("Claude Code Scheduler stopped")
 
 
 # Initialize FastAPI app
@@ -64,6 +79,7 @@ app.include_router(logs.router, prefix="/api/v1", tags=["logs"])
 app.include_router(events.router, prefix="/api/v1", tags=["events"])
 app.include_router(best_of_n.router, tags=["best-of-n"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["metrics"])
+app.include_router(scheduled_claude_tasks.router, prefix="/api/v1", tags=["scheduled-claude-tasks"])
 
 
 # Health check endpoint
