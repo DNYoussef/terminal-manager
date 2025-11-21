@@ -89,6 +89,16 @@ const CONFIG = {
     trackMetrics: true,
     allowHumanOverride: true,
     verboseReporting: true
+  },
+
+  // INFINITE LOOP FIX: Refinement limits to prevent endless retry cycles
+  // Addresses the "halting problem" in the Three-Loop Architecture
+  refinement: {
+    maxAttempts: 3,           // Maximum refinement attempts before requiring human override
+    minScoreImprovement: 5,   // Minimum score improvement (points) to continue refining
+    cooldownMs: 30000,        // Cooldown between refinement attempts (30 seconds)
+    fallbackToWarning: true,  // After max attempts, downgrade to warning (don't block)
+    trackAttempts: true       // Track refinement attempts in memory for pattern learning
   }
 };
 
@@ -210,36 +220,85 @@ class QualityGradeCalculator {
 
 /**
  * Connascence Analyzer Integration
+ *
+ * IMPORTANT LIMITATION: This analyzer uses regex-based heuristics, not AST parsing.
+ * This means it may produce false positives (commented code, strings) and false negatives
+ * (multi-line patterns, Python files). For production use, integrate with a proper AST
+ * parser like tree-sitter or language-specific parsers.
+ *
+ * Known limitations:
+ * - Cannot distinguish code from comments/strings
+ * - Python analysis is limited (indentation-based, no braces)
+ * - Multi-line function signatures may not be detected
  */
 class ConnascenceAnalyzer {
   /**
-   * Mock Connascence analysis (replace with actual MCP call)
+   * Analyze file for code quality violations
+   * Uses heuristic regex analysis (see class comment for limitations)
    */
   async analyzeFile(filePath) {
-    // TODO: Replace with actual MCP call
+    // TODO: Replace with actual MCP call for more accurate analysis
     // const result = await mcp__connascence-analyzer__analyze_workspace({ path: filePath });
 
-    // Mock analysis for now
     const content = fs.readFileSync(filePath, 'utf8');
-    const lines = content.split('\n');
+    const ext = path.extname(filePath).toLowerCase();
 
-    // Simple heuristic-based analysis
+    // REGEX LIMITATION FIX: Strip comments and strings before analysis
+    // This reduces false positives from commented-out code
+    const strippedContent = this.stripCommentsAndStrings(content, ext);
+
+    // Simple heuristic-based analysis with comment stripping
     const violations = {
-      godObjects: this.detectGodObjects(content),
-      parameterBombs: this.detectParameterBombs(content),
-      cyclomaticComplexity: this.detectComplexity(content),
-      deepNesting: this.detectNesting(content),
-      longFunctions: this.detectLongFunctions(content),
-      magicLiterals: this.detectMagicLiterals(content)
+      godObjects: this.detectGodObjects(strippedContent, ext),
+      parameterBombs: this.detectParameterBombs(strippedContent, ext),
+      cyclomaticComplexity: this.detectComplexity(strippedContent),
+      deepNesting: this.detectNesting(strippedContent, ext),
+      longFunctions: this.detectLongFunctions(strippedContent, ext),
+      magicLiterals: this.detectMagicLiterals(content)  // Use original for literals
     };
 
     return violations;
   }
 
-  detectGodObjects(content) {
+  /**
+   * REGEX FIX: Strip comments and string literals to reduce false positives
+   */
+  stripCommentsAndStrings(content, ext) {
+    let stripped = content;
+
+    // Remove multi-line comments /* ... */
+    stripped = stripped.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // Remove single-line comments // ... and # ... (Python)
+    stripped = stripped.replace(/\/\/.*$/gm, '');
+    if (ext === '.py') {
+      stripped = stripped.replace(/#.*$/gm, '');
+      // Remove Python docstrings
+      stripped = stripped.replace(/"""[\s\S]*?"""/g, '');
+      stripped = stripped.replace(/'''[\s\S]*?'''/g, '');
+    }
+
+    // Remove string literals (simple approach - not perfect but reduces false positives)
+    stripped = stripped.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+    stripped = stripped.replace(/'(?:[^'\\]|\\.)*'/g, "''");
+    stripped = stripped.replace(/`(?:[^`\\]|\\.)*`/g, '``');
+
+    return stripped;
+  }
+
+  detectGodObjects(content, ext = '.js') {
     // Count methods in classes (simple heuristic)
     const classMatches = content.match(/class\s+\w+/g) || [];
-    const methodMatches = content.match(/\s+(async\s+)?\w+\s*\([^)]*\)\s*{/g) || [];
+
+    // Different method detection for Python vs JS/TS
+    let methodMatches;
+    if (ext === '.py') {
+      // Python: def method_name(self, ...)
+      methodMatches = content.match(/^\s+def\s+\w+\s*\(/gm) || [];
+    } else {
+      // JS/TS: methodName() { or async methodName() {
+      methodMatches = content.match(/\s+(async\s+)?\w+\s*\([^)]*\)\s*[{:]/g) || [];
+    }
 
     if (classMatches.length > 0 && methodMatches.length > CONFIG.violationThresholds.methodCount) {
       return [{
@@ -251,17 +310,34 @@ class ConnascenceAnalyzer {
     return [];
   }
 
-  detectParameterBombs(content) {
+  detectParameterBombs(content, ext = '.js') {
     // Find functions with excessive parameters
-    const functionRegex = /function\s+\w+\s*\(([^)]*)\)/g;
+    let functionRegex;
+    if (ext === '.py') {
+      // Python: def func_name(param1, param2, ...)
+      functionRegex = /def\s+(\w+)\s*\(([^)]*)\)/g;
+    } else {
+      // JS/TS: function funcName(...) or const func = (...) =>
+      functionRegex = /(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s+)?\()\s*\(([^)]*)\)/g;
+    }
+
     const violations = [];
     let match;
 
     while ((match = functionRegex.exec(content)) !== null) {
-      const params = match[1].split(',').filter(p => p.trim().length > 0);
+      const funcName = match[1] || match[2] || 'anonymous';
+      const paramsStr = ext === '.py' ? match[2] : (match[3] || match[2]);
+      if (!paramsStr) continue;
+
+      // Filter out self/cls for Python
+      let params = paramsStr.split(',').filter(p => p.trim().length > 0);
+      if (ext === '.py') {
+        params = params.filter(p => !['self', 'cls'].includes(p.trim().split('=')[0].split(':')[0].trim()));
+      }
+
       if (params.length > CONFIG.violationThresholds.parameterCount) {
         violations.push({
-          functionName: match[0].match(/function\s+(\w+)/)[1],
+          functionName: funcName,
           parameterCount: params.length,
           threshold: CONFIG.violationThresholds.parameterCount
         });
@@ -282,17 +358,29 @@ class ConnascenceAnalyzer {
     return [];
   }
 
-  detectNesting(content) {
+  detectNesting(content, ext = '.js') {
     // Find maximum nesting depth
     let maxDepth = 0;
     let currentDepth = 0;
 
-    for (const char of content) {
-      if (char === '{') {
-        currentDepth++;
-        maxDepth = Math.max(maxDepth, currentDepth);
-      } else if (char === '}') {
-        currentDepth--;
+    if (ext === '.py') {
+      // Python: Count indentation levels (4 spaces = 1 level)
+      const lines = content.split('\n');
+      for (const line of lines) {
+        if (line.trim().length === 0) continue;
+        const leadingSpaces = line.match(/^(\s*)/)[1].length;
+        const depth = Math.floor(leadingSpaces / 4);  // Assume 4-space indent
+        maxDepth = Math.max(maxDepth, depth);
+      }
+    } else {
+      // JS/TS: Count brace depth
+      for (const char of content) {
+        if (char === '{') {
+          currentDepth++;
+          maxDepth = Math.max(maxDepth, currentDepth);
+        } else if (char === '}') {
+          currentDepth--;
+        }
       }
     }
 
@@ -305,21 +393,38 @@ class ConnascenceAnalyzer {
     return [];
   }
 
-  detectLongFunctions(content) {
+  detectLongFunctions(content, ext = '.js') {
     // Find functions longer than threshold
-    const functionBlocks = content.match(/function\s+\w+[^{]*{[^}]*}/gs) || [];
     const violations = [];
 
-    functionBlocks.forEach(block => {
-      const lines = block.split('\n').length;
-      if (lines > CONFIG.violationThresholds.functionLength) {
-        violations.push({
-          functionName: (block.match(/function\s+(\w+)/) || ['', 'anonymous'])[1],
-          lines,
-          threshold: CONFIG.violationThresholds.functionLength
-        });
+    if (ext === '.py') {
+      // Python: Match def blocks by indentation
+      const defRegex = /^([ \t]*)def\s+(\w+)\s*\([^)]*\).*?(?=^\1(?:def|class|\S)|\Z)/gms;
+      let match;
+      while ((match = defRegex.exec(content)) !== null) {
+        const lines = match[0].split('\n').length;
+        if (lines > CONFIG.violationThresholds.functionLength) {
+          violations.push({
+            functionName: match[2],
+            lines,
+            threshold: CONFIG.violationThresholds.functionLength
+          });
+        }
       }
-    });
+    } else {
+      // JS/TS: Match function blocks
+      const functionBlocks = content.match(/(?:function\s+\w+|(?:async\s+)?(?:\w+|\([^)]*\))\s*=>)[^{]*{[^}]*}/gs) || [];
+      functionBlocks.forEach(block => {
+        const lines = block.split('\n').length;
+        if (lines > CONFIG.violationThresholds.functionLength) {
+          violations.push({
+            functionName: (block.match(/(?:function\s+)?(\w+)/) || ['', 'anonymous'])[1],
+            lines,
+            threshold: CONFIG.violationThresholds.functionLength
+          });
+        }
+      });
+    }
 
     return violations;
   }
@@ -507,6 +612,108 @@ class BackendMetricsService {
 }
 
 /**
+ * INFINITE LOOP FIX: Refinement Tracker
+ * Tracks refinement attempts to prevent endless retry cycles
+ */
+class RefinementTracker {
+  constructor(config = CONFIG) {
+    this.config = config;
+    this.attempts = new Map();  // fileKey -> { count, lastScore, lastAttempt }
+  }
+
+  /**
+   * Get unique key for file + agent combination
+   */
+  getKey(agent, filePath) {
+    return `${agent}:${filePath}`;
+  }
+
+  /**
+   * Check if refinement should continue or stop
+   * Returns: { shouldContinue, reason, forceWarningOnly }
+   */
+  shouldContinueRefinement(agent, filePath, currentScore) {
+    const key = this.getKey(agent, filePath);
+    const attempt = this.attempts.get(key);
+    const refinementConfig = this.config.refinement || {};
+    const maxAttempts = refinementConfig.maxAttempts || 3;
+    const minImprovement = refinementConfig.minScoreImprovement || 5;
+    const cooldownMs = refinementConfig.cooldownMs || 30000;
+    const fallbackToWarning = refinementConfig.fallbackToWarning !== false;
+
+    // First attempt - always allow
+    if (!attempt) {
+      this.attempts.set(key, {
+        count: 1,
+        lastScore: currentScore,
+        lastAttempt: Date.now(),
+        scores: [currentScore]
+      });
+      return { shouldContinue: true, reason: 'First refinement attempt' };
+    }
+
+    // Check max attempts
+    if (attempt.count >= maxAttempts) {
+      return {
+        shouldContinue: false,
+        reason: `Max refinement attempts (${maxAttempts}) reached. Requires human override.`,
+        forceWarningOnly: fallbackToWarning
+      };
+    }
+
+    // Check cooldown
+    const timeSinceLastAttempt = Date.now() - attempt.lastAttempt;
+    if (timeSinceLastAttempt < cooldownMs) {
+      return {
+        shouldContinue: false,
+        reason: `Cooldown period active. Wait ${Math.ceil((cooldownMs - timeSinceLastAttempt) / 1000)}s.`,
+        forceWarningOnly: false
+      };
+    }
+
+    // Check minimum improvement
+    const improvement = currentScore - attempt.lastScore;
+    if (improvement < minImprovement && attempt.count > 1) {
+      return {
+        shouldContinue: false,
+        reason: `Score not improving (${improvement.toFixed(1)} < ${minImprovement} min). LLM unlikely to fix further.`,
+        forceWarningOnly: fallbackToWarning
+      };
+    }
+
+    // Allow refinement
+    attempt.count++;
+    attempt.lastScore = currentScore;
+    attempt.lastAttempt = Date.now();
+    attempt.scores.push(currentScore);
+
+    return {
+      shouldContinue: true,
+      reason: `Refinement attempt ${attempt.count}/${maxAttempts}`
+    };
+  }
+
+  /**
+   * Reset tracking for a file (after successful commit)
+   */
+  reset(agent, filePath) {
+    const key = this.getKey(agent, filePath);
+    this.attempts.delete(key);
+  }
+
+  /**
+   * Get refinement stats for a file
+   */
+  getStats(agent, filePath) {
+    const key = this.getKey(agent, filePath);
+    return this.attempts.get(key) || null;
+  }
+}
+
+// Singleton refinement tracker
+const refinementTracker = new RefinementTracker();
+
+/**
  * Main Quality Pipeline
  */
 class QualityPipeline {
@@ -517,6 +724,7 @@ class QualityPipeline {
     this.reporter = new ViolationReporter(config);
     this.memory = new MemoryIntegration();
     this.backend = new BackendMetricsService(config);
+    this.refinementTracker = refinementTracker;  // INFINITE LOOP FIX
   }
 
   /**
@@ -555,14 +763,44 @@ class QualityPipeline {
           console.log('[Quality Gate] Human override approved. Allowing commit.');
           report.passed = true;
           report.overridden = true;
+          this.refinementTracker.reset(agent, filePath);  // Reset on successful override
         } else {
+          // INFINITE LOOP FIX: Check refinement limits before blocking
+          const refinementCheck = this.refinementTracker.shouldContinueRefinement(
+            agent, filePath, report.score
+          );
+
+          if (!refinementCheck.shouldContinue) {
+            console.log(`[Quality Gate] ${refinementCheck.reason}`);
+
+            // Downgrade to warning if configured
+            if (refinementCheck.forceWarningOnly) {
+              console.log('[Quality Gate] DOWNGRADED TO WARNING: Score too low but max refinements reached.');
+              console.log('[Quality Gate] Allowing commit with warning. Human review recommended.');
+              report.passed = true;
+              report.warning = `Quality score ${report.score} below threshold ${threshold}`;
+              report.refinementExhausted = true;
+              return report;
+            }
+
+            // Still block but with different message
+            throw new Error(
+              `Quality gate blocked: ${refinementCheck.reason}. ` +
+              `Use --human-override to bypass or improve code quality.`
+            );
+          }
+
           // Suggest fixes
           const suggestions = this.reporter.suggestFixes(violations);
+          console.log(`\n[Quality Gate] ${refinementCheck.reason}`);
           console.log('\nSuggested Fixes:');
           suggestions.forEach(s => console.log(`  - ${s}`));
 
           throw new Error(`Quality gate failed: Score ${report.score} below threshold ${threshold}`);
         }
+      } else if (report.passed) {
+        // Reset refinement tracking on success
+        this.refinementTracker.reset(agent, filePath);
       }
 
       return report;
@@ -647,6 +885,8 @@ module.exports = {
   ViolationReporter,
   MemoryIntegration,
   BackendMetricsService,
+  RefinementTracker,      // INFINITE LOOP FIX: Export for testing/inspection
+  refinementTracker,      // INFINITE LOOP FIX: Singleton instance
   preFileWriteHook,
   CONFIG
 };

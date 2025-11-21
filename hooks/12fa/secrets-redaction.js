@@ -70,6 +70,9 @@ class SecretsRedactor {
    * Scan value for secrets
    * @param {string|object} value - Value to scan
    * @returns {Array} Array of detected secrets
+   *
+   * SECURITY FIX: Now handles encoded secrets (base64, URL encoding) and
+   * fragmented secrets split across lines/JSON keys
    */
   scanForSecrets(value) {
     const startTime = Date.now();
@@ -93,20 +96,39 @@ class SecretsRedactor {
       return detections;
     }
 
-    // Scan against all patterns
-    for (const pattern of this.patterns) {
-      const matches = scanValue.match(pattern.compiledRegex);
+    // SECURITY FIX: Also scan decoded variants to catch encoding bypass attacks
+    const scanVariants = [
+      scanValue,  // Original
+      this.decodeBase64Strings(scanValue),  // Base64 decoded
+      this.decodeUrlEncoding(scanValue),    // URL decoded
+      this.removeWhitespace(scanValue)      // Whitespace removed (anti-fragmentation)
+    ];
 
-      if (matches && matches.length > 0) {
-        detections.push({
-          name: pattern.name,
-          severity: pattern.severity,
-          description: pattern.description,
-          recommendation: pattern.recommendation,
-          matchCount: matches.length,
-          // Only include first match snippet (redacted)
-          sample: this.redactMatch(matches[0])
-        });
+    // Scan against all patterns across all variants
+    for (const pattern of this.patterns) {
+      for (const variant of scanVariants) {
+        const matches = variant.match(pattern.compiledRegex);
+
+        if (matches && matches.length > 0) {
+          // Avoid duplicate detections
+          const existingDetection = detections.find(d => d.name === pattern.name);
+          if (!existingDetection) {
+            detections.push({
+              name: pattern.name,
+              severity: pattern.severity,
+              description: pattern.description,
+              recommendation: pattern.recommendation,
+              matchCount: matches.length,
+              // Only include first match snippet (redacted)
+              sample: this.redactMatch(matches[0]),
+              // Track which scan variant found it
+              detectedIn: variant === scanValue ? 'original' :
+                          variant === scanVariants[1] ? 'base64_decoded' :
+                          variant === scanVariants[2] ? 'url_decoded' : 'whitespace_removed'
+            });
+          }
+          break;  // Found in one variant, no need to check others for this pattern
+        }
       }
     }
 
@@ -117,6 +139,51 @@ class SecretsRedactor {
     }
 
     return detections;
+  }
+
+  /**
+   * SECURITY FIX: Decode base64 strings within content
+   * Detects and decodes base64 patterns to catch encoded secrets
+   */
+  decodeBase64Strings(content) {
+    // Match base64-looking strings (min 20 chars to avoid false positives)
+    const base64Regex = /[A-Za-z0-9+/]{20,}={0,2}/g;
+    let decoded = content;
+
+    const matches = content.match(base64Regex) || [];
+    for (const match of matches) {
+      try {
+        const decodedStr = Buffer.from(match, 'base64').toString('utf8');
+        // Only replace if decoded string is printable ASCII
+        if (/^[\x20-\x7E]+$/.test(decodedStr)) {
+          decoded = decoded.replace(match, decodedStr);
+        }
+      } catch (e) {
+        // Not valid base64, skip
+      }
+    }
+
+    return decoded;
+  }
+
+  /**
+   * SECURITY FIX: Decode URL-encoded strings within content
+   */
+  decodeUrlEncoding(content) {
+    try {
+      return decodeURIComponent(content.replace(/\+/g, ' '));
+    } catch (e) {
+      // Invalid URL encoding, return original
+      return content;
+    }
+  }
+
+  /**
+   * SECURITY FIX: Remove whitespace to detect fragmented secrets
+   * Handles secrets split across lines or JSON keys
+   */
+  removeWhitespace(content) {
+    return content.replace(/[\s\n\r\t]/g, '');
   }
 
   /**

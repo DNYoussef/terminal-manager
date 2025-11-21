@@ -69,9 +69,15 @@ class Config:
                 return False
 
             # Check against whitelist using resolved paths
+            # SECURITY FIX: Use path component matching, not string prefix matching
+            # This prevents C:\Data\Project_Secret being allowed by C:\Data\Project
             for base_dir in cls.ALLOWED_BASE_DIRS:
                 resolved_base = os.path.realpath(base_dir)
-                if abs_path.startswith(resolved_base):
+                # Ensure base ends with separator for proper path boundary checking
+                if not resolved_base.endswith(os.sep):
+                    resolved_base = resolved_base + os.sep
+                # Check if path is exactly the base or starts with base+separator
+                if abs_path == resolved_base.rstrip(os.sep) or abs_path.startswith(resolved_base):
                     return True
 
             return False

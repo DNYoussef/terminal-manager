@@ -30,12 +30,19 @@ logger = logging.getLogger(__name__)
 class TerminalManager:
     """Manages terminal processes and output streaming with security hardening"""
 
+    # ORPHAN PROCESS FIX: Idle timeout configuration
+    IDLE_TIMEOUT_SECONDS = int(os.environ.get('TERMINAL_IDLE_TIMEOUT', 300))  # 5 minutes default
+
     def __init__(self):
         self.active_terminals: Dict[str, asyncio.subprocess.Process] = {}
         self.output_tasks: Dict[str, List[asyncio.Task]] = {}  # FIX: Store ALL tasks
         self.subscribers: Dict[str, Set[asyncio.Queue]] = {}
+        self.last_activity: Dict[str, datetime] = {}  # ORPHAN PROCESS FIX: Track last activity
         self._lock = asyncio.Lock()
+        self._idle_checker_task: Optional[asyncio.Task] = None
         logger.info("TerminalManager initialized")
+        # Start idle checker background task
+        self._start_idle_checker()
 
     async def spawn(
         self,
@@ -119,6 +126,7 @@ class TerminalManager:
             async with self._lock:
                 self.active_terminals[terminal_id] = process
                 self.subscribers[terminal_id] = set()
+                self.last_activity[terminal_id] = datetime.now(timezone.utc)  # ORPHAN FIX: Track activity
 
             # Create database record (use timezone-aware datetime)
             terminal = Terminal(
@@ -380,6 +388,8 @@ class TerminalManager:
                 self.subscribers[terminal_id] = set()
 
             self.subscribers[terminal_id].add(queue)
+            # ORPHAN FIX: Update activity on subscribe
+            self.last_activity[terminal_id] = datetime.now(timezone.utc)
 
             logger.debug(
                 f"Added subscriber to terminal {terminal_id} "
@@ -399,6 +409,8 @@ class TerminalManager:
         async with self._lock:
             if terminal_id in self.subscribers:
                 self.subscribers[terminal_id].discard(queue)
+                # ORPHAN FIX: Update activity on unsubscribe (start idle timer)
+                self.last_activity[terminal_id] = datetime.now(timezone.utc)
                 logger.debug(
                     f"Removed subscriber from terminal {terminal_id} "
                     f"({len(self.subscribers[terminal_id])} remaining)"
@@ -568,6 +580,85 @@ class TerminalManager:
             self.output_tasks.clear()
 
         logger.info("Terminal manager cleanup complete")
+
+    def _start_idle_checker(self) -> None:
+        """Start the background task that checks for idle terminals"""
+        async def _checker():
+            while True:
+                await asyncio.sleep(60)  # Check every minute
+                await self._check_idle_terminals()
+
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                self._idle_checker_task = asyncio.create_task(_checker())
+                logger.info("Started idle terminal checker (timeout: %ds)", self.IDLE_TIMEOUT_SECONDS)
+        except RuntimeError:
+            # No event loop running yet, will be started later
+            logger.debug("Idle checker will start when event loop is available")
+
+    async def _check_idle_terminals(self) -> None:
+        """
+        ORPHAN PROCESS FIX: Check for terminals with no subscribers and kill them
+        if they've been idle longer than IDLE_TIMEOUT_SECONDS
+        """
+        now = datetime.now(timezone.utc)
+        terminals_to_kill = []
+
+        async with self._lock:
+            for terminal_id, process in list(self.active_terminals.items()):
+                # Check if terminal has no subscribers (disconnected WebSocket)
+                subscribers = self.subscribers.get(terminal_id, set())
+                if len(subscribers) == 0:
+                    # Check last activity time
+                    last_active = self.last_activity.get(terminal_id, datetime.now(timezone.utc))
+                    idle_seconds = (now - last_active).total_seconds()
+
+                    if idle_seconds > self.IDLE_TIMEOUT_SECONDS:
+                        terminals_to_kill.append(terminal_id)
+                        logger.warning(
+                            f"Terminal {terminal_id} idle for {idle_seconds:.0f}s "
+                            f"(>{self.IDLE_TIMEOUT_SECONDS}s), marking for cleanup"
+                        )
+
+        # Kill idle terminals outside of lock
+        for terminal_id in terminals_to_kill:
+            try:
+                await self._kill_orphan_terminal(terminal_id)
+            except Exception as e:
+                logger.error(f"Error killing orphan terminal {terminal_id}: {e}")
+
+    async def _kill_orphan_terminal(self, terminal_id: str) -> None:
+        """Kill an orphaned terminal process and cleanup resources"""
+        async with self._lock:
+            process = self.active_terminals.get(terminal_id)
+            if not process:
+                return
+
+            try:
+                logger.info(f"Killing orphan terminal {terminal_id} (PID: {process.pid})")
+                process.terminate()
+                await asyncio.wait_for(process.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                logger.warning(f"Terminal {terminal_id} did not terminate, force killing")
+                process.kill()
+                try:
+                    await process.wait()
+                except:
+                    pass
+
+            # Cleanup
+            self.active_terminals.pop(terminal_id, None)
+            self.last_activity.pop(terminal_id, None)
+            self.subscribers.pop(terminal_id, None)
+
+            # Cancel output tasks
+            if terminal_id in self.output_tasks:
+                for task in self.output_tasks[terminal_id]:
+                    task.cancel()
+                self.output_tasks.pop(terminal_id, None)
+
+        logger.info(f"Orphan terminal {terminal_id} cleaned up")
 
 
 # Global instance

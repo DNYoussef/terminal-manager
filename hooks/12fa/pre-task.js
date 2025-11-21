@@ -29,6 +29,17 @@ const { getOrCreate, propagate } = require('./correlation-id-manager');
 const { getAdapter } = require('./opentelemetry-adapter');
 const { taggedMemoryStore, detectProject } = require('./memory-mcp-tagging-protocol');
 
+// BLOCKER-4: Import budget tracker for pre-check validation
+let budgetTracker, budgetCheckEnabled;
+try {
+  budgetTracker = require('../../../../claude-code-plugins/ruv-sparc-three-loop-system/hooks/12fa/budget-tracker.js');
+  budgetCheckEnabled = true;
+  console.log('[PreTask] Budget enforcement enabled');
+} catch (err) {
+  budgetCheckEnabled = false;
+  console.warn('[PreTask] Budget tracker not available - operations will not be rate-limited');
+}
+
 // Initialize structured logger and telemetry
 const logger = getLogger();
 const otelAdapter = getAdapter();
@@ -176,6 +187,57 @@ async function preTaskHook(context) {
       project: taskInfo.project
     });
 
+    // BLOCKER-4: Check budget before allowing task to proceed
+    if (budgetCheckEnabled) {
+      const budgetCheck = budgetTracker.checkBudget(assignedAgent, {
+        estimatedTokens: context?.estimatedTokens || 10000,  // Default estimate
+        estimatedCost: context?.estimatedCost || 0.01
+      });
+
+      if (!budgetCheck.allowed) {
+        logger.error('Task blocked: Budget exceeded', {
+          trace_id: correlationId,
+          span_id: span.spanId,
+          task_id: taskId,
+          assigned_agent: assignedAgent,
+          reason: budgetCheck.reason,
+          remaining: budgetCheck.remaining
+        });
+
+        span.setAttribute('task.blocked', true);
+        span.setAttribute('task.block_reason', budgetCheck.reason);
+        span.addEvent('task-blocked-budget-exceeded', {
+          'budget.reason': budgetCheck.reason,
+          'budget.remaining.global': budgetCheck.remaining.global,
+          'budget.remaining.agent': budgetCheck.remaining.agent
+        });
+
+        otelAdapter.endSpan(span);
+
+        return {
+          success: false,
+          blocked: true,
+          reason: budgetCheck.reason,
+          budgetStatus: budgetCheck,
+          trace_id: correlationId,
+          span_id: span.spanId,
+          timestamp: new Date().toISOString(),
+          httpStatus: 429  // Too Many Requests
+        };
+      }
+
+      logger.info('Budget check passed', {
+        trace_id: correlationId,
+        span_id: span.spanId,
+        task_id: taskId,
+        assigned_agent: assignedAgent,
+        remaining_tokens: budgetCheck.remaining.agent
+      });
+
+      span.setAttribute('budget.check_time', budgetCheck.checkTime);
+      span.setAttribute('budget.remaining.agent', budgetCheck.remaining.agent);
+    }
+
     // Store in Memory MCP with full tagging
     const memoryData = taggedMemoryStore(assignedAgent, JSON.stringify({
       event: 'task-started',
@@ -311,15 +373,105 @@ async function storeSessionMetadata(taskInfo, correlationId, spanId) {
 }
 
 /**
- * Get session metadata
+ * CONTEXT POISONING FIX: Context Summarization
+ *
+ * Summarizes large log entries before feeding them back to LLM context.
+ * Prevents exponential context growth and hallucination from verbose logs.
+ *
+ * @param {object} data - Raw session/log data
+ * @param {object} options - Summarization options
+ * @returns {object} Summarized data safe for context injection
  */
-function getSessionMetadata(sessionId) {
+function summarizeContext(data, options = {}) {
+  const {
+    maxOutputLength = 500,     // Max chars for output/stderr fields
+    maxErrorLength = 200,      // Max chars for error messages
+    maxFilesModified = 10,     // Max files to include in list
+    maxLogEntries = 5,         // Max log entries to include
+    excludeFields = ['raw_output', 'full_trace', 'debug_data']  // Fields to exclude entirely
+  } = options;
+
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const summarized = {};
+
+  for (const [key, value] of Object.entries(data)) {
+    // Skip excluded fields entirely
+    if (excludeFields.includes(key)) {
+      summarized[key] = '[EXCLUDED_FROM_CONTEXT]';
+      continue;
+    }
+
+    // Truncate string fields that could be large
+    if (typeof value === 'string') {
+      if (['output', 'stdout', 'stderr', 'stdout_log', 'stderr_log'].includes(key)) {
+        summarized[key] = value.length > maxOutputLength
+          ? value.substring(0, maxOutputLength) + `... [TRUNCATED: ${value.length} total chars]`
+          : value;
+      } else if (['error', 'error_message', 'exception'].includes(key)) {
+        summarized[key] = value.length > maxErrorLength
+          ? value.substring(0, maxErrorLength) + '... [TRUNCATED]'
+          : value;
+      } else {
+        summarized[key] = value;
+      }
+      continue;
+    }
+
+    // Limit array lengths
+    if (Array.isArray(value)) {
+      if (['files_modified', 'files_created', 'artifacts'].includes(key)) {
+        summarized[key] = value.length > maxFilesModified
+          ? [...value.slice(0, maxFilesModified), `... and ${value.length - maxFilesModified} more`]
+          : value;
+      } else if (['logs', 'entries', 'history'].includes(key)) {
+        summarized[key] = value.length > maxLogEntries
+          ? [...value.slice(0, maxLogEntries), { _note: `${value.length - maxLogEntries} entries omitted` }]
+          : value;
+      } else {
+        // Recursively summarize array items
+        summarized[key] = value.map(item =>
+          typeof item === 'object' ? summarizeContext(item, options) : item
+        );
+      }
+      continue;
+    }
+
+    // Recursively handle nested objects
+    if (typeof value === 'object' && value !== null) {
+      summarized[key] = summarizeContext(value, options);
+      continue;
+    }
+
+    // Pass through primitives unchanged
+    summarized[key] = value;
+  }
+
+  return summarized;
+}
+
+/**
+ * Get session metadata with context summarization
+ *
+ * CONTEXT POISONING FIX: Summarizes log data before returning to prevent
+ * massive JSON blobs from polluting the LLM context window.
+ */
+function getSessionMetadata(sessionId, summarize = true) {
   try {
     const sessionFile = path.join(__dirname, '../../logs/12fa/sessions', `${sessionId}.json`);
 
     if (fs.existsSync(sessionFile)) {
       const data = fs.readFileSync(sessionFile, 'utf8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+
+      // CONTEXT POISONING FIX: Apply summarization by default
+      if (summarize) {
+        return summarizeContext(parsed);
+      }
+
+      return parsed;
     }
 
     return null;
@@ -396,5 +548,6 @@ module.exports = {
   preTaskHook,
   getSessionMetadata,
   autoAssignAgent,
+  summarizeContext,  // CONTEXT POISONING FIX: Export for use in other hooks
   TASK_TYPE_TO_AGENT
 };

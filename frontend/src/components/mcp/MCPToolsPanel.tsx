@@ -38,8 +38,13 @@ export const MCPToolsPanel: React.FC = () => {
   };
 
   const handleCallTool = async (toolName: string) => {
-    await callTool(toolName, toolArgs);
-    setToolArgs({});
+    // FIX: Only clear form on success, preserve args on error for retry
+    const result = await callTool(toolName, toolArgs);
+    // Check if the call was successful before clearing
+    // callTool returns the result or throws/returns falsy on error
+    if (result && result.success !== false) {
+      setToolArgs({});
+    }
   };
 
   const handleToolArgChange = (key: string, value: any) => {

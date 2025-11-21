@@ -8,12 +8,77 @@ Features:
 - Graph view relationships via tags
 - Daily notes integration
 - Memory layer visualization
+
+RACE CONDITION FIX: Uses file locking to prevent concurrent write corruption
 """
 import os
 import json
+import fcntl  # Unix file locking
+import msvcrt  # Windows file locking (fallback)
+import sys
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
+from contextlib import contextmanager
+
+
+@contextmanager
+def file_lock(file_path: Path, mode: str = 'w', timeout: float = 5.0):
+    """
+    Cross-platform file locking context manager.
+    Prevents race conditions when multiple agents write to the same file.
+
+    Args:
+        file_path: Path to the file to lock
+        mode: File open mode ('r', 'w', 'a')
+        timeout: Lock timeout in seconds
+
+    Raises:
+        TimeoutError: If lock cannot be acquired within timeout
+        IOError: If file cannot be opened
+    """
+    file_handle = None
+    try:
+        # Ensure parent directory exists
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Open file with appropriate mode
+        if mode == 'r' and not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        file_handle = open(file_path, mode, encoding='utf-8')
+
+        # Acquire lock (platform-specific)
+        if sys.platform == 'win32':
+            # Windows locking
+            import time
+            start_time = time.time()
+            while True:
+                try:
+                    msvcrt.locking(file_handle.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except IOError:
+                    if time.time() - start_time > timeout:
+                        raise TimeoutError(f"Could not acquire lock on {file_path}")
+                    time.sleep(0.1)
+        else:
+            # Unix locking
+            lock_type = fcntl.LOCK_EX if mode in ('w', 'a') else fcntl.LOCK_SH
+            fcntl.flock(file_handle.fileno(), lock_type)
+
+        yield file_handle
+
+    finally:
+        if file_handle:
+            # Release lock
+            if sys.platform == 'win32':
+                try:
+                    msvcrt.locking(file_handle.fileno(), msvcrt.LK_UNLCK, 1)
+                except:
+                    pass
+            else:
+                fcntl.flock(file_handle.fileno(), fcntl.LOCK_UN)
+            file_handle.close()
 
 
 class ObsidianSyncService:
@@ -160,8 +225,9 @@ This task is stored in the Memory MCP Triple Layer System:
         # Convert to markdown
         markdown = self.task_to_markdown(task_data)
 
-        # Write to file
-        note_path.write_text(markdown, encoding='utf-8')
+        # Write to file with locking to prevent race conditions
+        with file_lock(note_path, mode='w') as f:
+            f.write(markdown)
 
         return str(note_path)
 
@@ -177,23 +243,26 @@ This task is stored in the Memory MCP Triple Layer System:
         task_id = task_data["id"]
         memory_refs = task_data.get("memory_refs", {})
 
-        # Layer 1: Procedural
+        # Layer 1: Procedural (with file locking)
         if "procedural" in memory_refs:
             procedural_path = self.memory_dir / "Procedural" / f"{task_id}.md"
             procedural_content = self._build_procedural_note(task_data, memory_refs["procedural"])
-            procedural_path.write_text(procedural_content, encoding='utf-8')
+            with file_lock(procedural_path, mode='w') as f:
+                f.write(procedural_content)
 
-        # Layer 2: Episodic
+        # Layer 2: Episodic (with file locking)
         if "episodic" in memory_refs:
             episodic_path = self.memory_dir / "Episodic" / f"{task_id}.md"
             episodic_content = self._build_episodic_note(task_data, memory_refs["episodic"])
-            episodic_path.write_text(episodic_content, encoding='utf-8')
+            with file_lock(episodic_path, mode='w') as f:
+                f.write(episodic_content)
 
-        # Layer 3: Semantic
+        # Layer 3: Semantic (with file locking)
         if "semantic" in memory_refs:
             semantic_path = self.memory_dir / "Semantic" / f"{task_id}.md"
             semantic_content = self._build_semantic_note(task_data, memory_refs["semantic"])
-            semantic_path.write_text(semantic_content, encoding='utf-8')
+            with file_lock(semantic_path, mode='w') as f:
+                f.write(semantic_content)
 
     def add_to_daily_note(self, task_data: Dict[str, Any]):
         """
@@ -205,10 +274,12 @@ This task is stored in the Memory MCP Triple Layer System:
         today = datetime.now().strftime("%Y-%m-%d")
         daily_note_path = self.daily_dir / f"{today}.md"
 
-        # Read existing content or create new
-        if daily_note_path.exists():
-            content = daily_note_path.read_text(encoding='utf-8')
-        else:
+        # Read-modify-write with file locking to prevent race conditions
+        # This is critical for daily notes which multiple agents may update
+        try:
+            with file_lock(daily_note_path, mode='r') as f:
+                content = f.read()
+        except FileNotFoundError:
             content = f"# {today}\n\n## Tasks\n\n"
 
         # Add task reference
@@ -219,7 +290,9 @@ This task is stored in the Memory MCP Triple Layer System:
 
         content += task_ref
 
-        daily_note_path.write_text(content, encoding='utf-8')
+        # Write with lock
+        with file_lock(daily_note_path, mode='w') as f:
+            f.write(content)
 
     def parse_obsidian_task(self, note_path: Path) -> Optional[Dict[str, Any]]:
         """

@@ -318,13 +318,23 @@ async def create_project(
             # CRITICAL FIX #8: Complete transaction rollback with directory cleanup
             db.rollback()
 
-            # Cleanup created directory (use shutil.rmtree, not os.rmdir)
+            # Cleanup created directory with verification (not ignore_errors)
+            # PHANTOM PROJECT FIX: Ensure directory is actually removed
             if os.path.exists(project_path):
                 try:
-                    shutil.rmtree(project_path, ignore_errors=True)
+                    shutil.rmtree(project_path, ignore_errors=False)
                     logger.info(f"Cleaned up directory after DB failure: {project_path}")
                 except Exception as cleanup_error:
-                    logger.error(f"Cleanup failed: {cleanup_error}")
+                    # Log warning but don't fail - user needs to know about orphan
+                    logger.error(
+                        f"ORPHAN DIRECTORY WARNING: Failed to cleanup {project_path}: {cleanup_error}. "
+                        f"Manual cleanup required."
+                    )
+                    # Re-raise to inform caller of partial failure
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Project creation failed; directory at {project_path} may need manual cleanup"
+                    )
 
             # CRITICAL FIX #7: Generic error message (no DB details)
             raise HTTPException(
@@ -352,11 +362,15 @@ async def create_project(
         # CRITICAL FIX #8: Comprehensive cleanup on any failure
         db.rollback()
 
+        # PHANTOM PROJECT FIX: Verify cleanup success
         if os.path.exists(project_path):
             try:
-                shutil.rmtree(project_path, ignore_errors=True)
+                shutil.rmtree(project_path, ignore_errors=False)
+                logger.info(f"Cleaned up directory after unexpected failure: {project_path}")
             except Exception as cleanup_error:
-                logger.error(f"Cleanup failed: {cleanup_error}")
+                logger.error(
+                    f"ORPHAN DIRECTORY WARNING: Failed to cleanup {project_path}: {cleanup_error}"
+                )
 
         # CRITICAL FIX #7: Generic error message
         raise HTTPException(status_code=500, detail="Error creating project")

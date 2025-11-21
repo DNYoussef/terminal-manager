@@ -19,6 +19,7 @@ import json
 import os
 import logging
 import re
+import hashlib
 from typing import Dict, List, Optional
 
 # Import database session and models
@@ -32,6 +33,65 @@ logger = logging.getLogger(__name__)
 
 # Global scheduler instance
 scheduler = BackgroundScheduler()
+
+# RACE CONDITION FIX: Distributed lock using Redis or file-based fallback
+_redis_client = None
+LOCK_TIMEOUT = 300  # 5 minutes max execution time for lock
+
+def _get_redis_client():
+    """Get Redis client for distributed locking (lazy initialization)"""
+    global _redis_client
+    if _redis_client is None:
+        try:
+            import redis
+            redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+            _redis_client = redis.from_url(redis_url)
+            _redis_client.ping()  # Test connection
+            logger.info("Redis distributed lock enabled")
+        except Exception as e:
+            logger.warning(f"Redis unavailable ({e}), using database-based locking")
+            _redis_client = False  # Mark as unavailable
+    return _redis_client if _redis_client else None
+
+def acquire_task_lock(task_id: str, db) -> bool:
+    """
+    Acquire distributed lock for task execution.
+    Prevents race condition when multiple workers try to execute same task.
+
+    Returns True if lock acquired, False if task already being executed.
+    """
+    redis = _get_redis_client()
+    lock_key = f"claude_task_lock:{task_id}"
+    worker_id = f"{os.getpid()}-{hashlib.md5(str(datetime.now()).encode()).hexdigest()[:8]}"
+
+    if redis:
+        # Redis-based distributed lock (preferred)
+        acquired = redis.set(lock_key, worker_id, nx=True, ex=LOCK_TIMEOUT)
+        return bool(acquired)
+    else:
+        # Database-based locking fallback using FOR UPDATE SKIP LOCKED
+        try:
+            task = db.query(ScheduledClaudeTask).filter(
+                ScheduledClaudeTask.id == task_id,
+                ScheduledClaudeTask.status == 'pending'
+            ).with_for_update(skip_locked=True).first()
+
+            if task:
+                # Mark as claimed
+                task.status = 'active'
+                db.commit()
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to acquire DB lock: {e}")
+            return False
+
+def release_task_lock(task_id: str):
+    """Release distributed lock after task execution"""
+    redis = _get_redis_client()
+    if redis:
+        lock_key = f"claude_task_lock:{task_id}"
+        redis.delete(lock_key)
 
 
 def init_scheduler():
@@ -173,15 +233,24 @@ def execute_claude_task(task_id: str):
     """
     Execute Claude Code instance with YOLO mode
     This is called by APScheduler at scheduled time or manually
+
+    RACE CONDITION FIX: Uses distributed locking to prevent multiple workers
+    from executing the same task simultaneously.
     """
     db = SessionLocal()
 
     try:
+        # RACE CONDITION FIX: Acquire distributed lock first
+        if not acquire_task_lock(task_id, db):
+            logger.info(f"Task {task_id} already being executed by another worker, skipping")
+            return
+
         # Get task from database
         task = db.query(ScheduledClaudeTask).filter(ScheduledClaudeTask.id == task_id).first()
 
         if not task:
             logger.error(f"Task not found: {task_id}")
+            release_task_lock(task_id)
             return
 
         logger.info(f"Executing Claude Code task: {task.title} (ID: {task_id})")
@@ -257,6 +326,8 @@ def execute_claude_task(task_id: str):
             pass
 
     finally:
+        # RACE CONDITION FIX: Always release the distributed lock
+        release_task_lock(task_id)
         db.close()
 
 
