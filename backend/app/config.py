@@ -3,6 +3,8 @@ Application Configuration
 Centralized configuration for security, limits, and paths
 """
 import os
+import shlex
+import sys
 from typing import List
 from pathlib import Path
 
@@ -45,6 +47,18 @@ class Config:
     # WebSocket
     WEBSOCKET_HOST: str = os.getenv('WEBSOCKET_HOST', 'localhost')
     WEBSOCKET_PORT: int = int(os.getenv('WEBSOCKET_PORT', '8000'))
+
+    # MCP execution configuration
+    PYTHON_EXECUTABLE: str = os.getenv('PYTHON_EXECUTABLE', sys.executable)
+    PROJECT_ROOT: Path = Path(__file__).resolve().parents[2]
+
+    @classmethod
+    def get_mcp_command(cls, env_var: str, default: List[str]) -> List[str]:
+        """Return MCP command from environment override or default."""
+        override = os.getenv(env_var)
+        if override:
+            return shlex.split(override)
+        return default
 
     @classmethod
     def validate_path(cls, path: str) -> bool:

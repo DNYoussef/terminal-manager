@@ -11,6 +11,8 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
+from app.config import config
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,15 +62,17 @@ class MCPProxyService:
     def _configure_servers(self):
         """Configure available MCP servers"""
 
+        python_exec = config.PYTHON_EXECUTABLE
+
+        memory_default = [python_exec, "-m", "memory_mcp.server"]
+        claude_default = ["npx", "claude-flow@alpha", "mcp", "start"]
+        connascence_default = [python_exec, "-m", "connascence_analyzer.mcp_server"]
+
         # Memory MCP Server
         self.servers["memory-mcp"] = MCPServerConfig(
             name="memory-mcp",
             type=MCPServerType.MEMORY,
-            command=[
-                r"C:\Users\17175\Desktop\memory-mcp-triple-system\venv-memory\Scripts\python.exe",
-                "-m",
-                "memory_mcp.server"
-            ],
+            command=config.get_mcp_command("MCP_MEMORY_CMD", memory_default),
             description="Memory MCP - Vector search and semantic memory storage",
             enabled=True
         )
@@ -77,12 +81,7 @@ class MCPProxyService:
         self.servers["claude-flow"] = MCPServerConfig(
             name="claude-flow",
             type=MCPServerType.CLAUDE_FLOW,
-            command=[
-                "npx",
-                "claude-flow@alpha",
-                "mcp",
-                "start"
-            ],
+            command=config.get_mcp_command("MCP_CLAUDE_FLOW_CMD", claude_default),
             description="Claude Flow - Swarm coordination and task orchestration",
             enabled=True
         )
@@ -91,11 +90,7 @@ class MCPProxyService:
         self.servers["connascence"] = MCPServerConfig(
             name="connascence",
             type=MCPServerType.CONNASCENCE,
-            command=[
-                r"C:\Users\17175\Desktop\connascence\venv-connascence\Scripts\python.exe",
-                "-m",
-                "connascence_analyzer.mcp_server"
-            ],
+            command=config.get_mcp_command("MCP_CONNASCENCE_CMD", connascence_default),
             description="Connascence Analyzer - Code quality and coupling detection",
             enabled=True
         )
