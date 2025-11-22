@@ -25,6 +25,38 @@ class MetricsAggregationService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _get_time_bucket(self, granularity: str):
+        """Return a SQLAlchemy expression that buckets timestamps by the given granularity.
+
+        SQLite (used in tests) doesn't support ``date_trunc`` so we fall back to
+        ``strftime`` when that dialect is detected. For Postgres we keep using
+        ``date_trunc`` to leverage native date bucketing.
+        """
+        dialect = self.db.bind.dialect.name if self.db.bind else None
+
+        if dialect == 'sqlite':
+            formats = {
+                'hour': '%Y-%m-%d %H:00:00',
+                'day': '%Y-%m-%d',
+                'week': '%Y-%W',
+                'month': '%Y-%m'
+            }
+            if granularity not in formats:
+                raise ValueError(f"Invalid granularity: {granularity}")
+            return func.strftime(formats[granularity], AgentMetric.timestamp)
+
+        # Default to Postgres-style date_trunc
+        if granularity == 'hour':
+            return func.date_trunc('hour', AgentMetric.timestamp)
+        if granularity == 'day':
+            return func.date_trunc('day', AgentMetric.timestamp)
+        if granularity == 'week':
+            return func.date_trunc('week', AgentMetric.timestamp)
+        if granularity == 'month':
+            return func.date_trunc('month', AgentMetric.timestamp)
+
+        raise ValueError(f"Invalid granularity: {granularity}")
+
     # ==================== Time-Series Aggregation ====================
 
     @cached(ttl=300, key_prefix="metrics:timeseries")
@@ -46,16 +78,7 @@ class MetricsAggregationService:
             List of aggregated metrics per time bucket
         """
         # Define time bucket based on granularity
-        if granularity == 'hour':
-            time_bucket = func.date_trunc('hour', AgentMetric.timestamp)
-        elif granularity == 'day':
-            time_bucket = func.date_trunc('day', AgentMetric.timestamp)
-        elif granularity == 'week':
-            time_bucket = func.date_trunc('week', AgentMetric.timestamp)
-        elif granularity == 'month':
-            time_bucket = func.date_trunc('month', AgentMetric.timestamp)
-        else:
-            raise ValueError(f"Invalid granularity: {granularity}")
+        time_bucket = self._get_time_bucket(granularity)
 
         # Query aggregations
         results = self.db.query(
@@ -81,8 +104,13 @@ class MetricsAggregationService:
             if row.total_operations > 0:
                 success_rate = (row.successful_operations / row.total_operations) * 100
 
+            if hasattr(row.period, 'isoformat'):
+                timestamp = row.period.isoformat()
+            else:
+                timestamp = str(row.period) if row.period is not None else None
+
             aggregations.append({
-                'timestamp': row.period.isoformat() if row.period else None,
+                'timestamp': timestamp,
                 'total_operations': row.total_operations,
                 'successful_operations': row.successful_operations,
                 'failed_operations': row.failed_operations,
@@ -266,9 +294,8 @@ class MetricsAggregationService:
         start_date = end_date - timedelta(days=lookback_days)
 
         # Build query
-        query = self.db.query(
-            func.date_trunc('day', AgentMetric.timestamp).label('day')
-        )
+        day_bucket = self._get_time_bucket('day')
+        query = self.db.query(day_bucket.label('day'))
 
         # Select metric
         if metric_name == 'execution_time':
