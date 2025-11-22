@@ -45,52 +45,70 @@ class MetricsAggregationService:
         Returns:
             List of aggregated metrics per time bucket
         """
-        # Define time bucket based on granularity
-        if granularity == 'hour':
-            time_bucket = func.date_trunc('hour', AgentMetric.timestamp)
-        elif granularity == 'day':
-            time_bucket = func.date_trunc('day', AgentMetric.timestamp)
-        elif granularity == 'week':
-            time_bucket = func.date_trunc('week', AgentMetric.timestamp)
-        elif granularity == 'month':
-            time_bucket = func.date_trunc('month', AgentMetric.timestamp)
-        else:
+        # Bucket timestamps in Python to avoid database-specific date functions
+        def truncate_timestamp(ts: datetime) -> datetime:
+            if granularity == 'hour':
+                return ts.replace(minute=0, second=0, microsecond=0)
+            if granularity == 'day':
+                return ts.replace(hour=0, minute=0, second=0, microsecond=0)
+            if granularity == 'week':
+                start_of_week = ts - timedelta(days=ts.weekday())
+                return start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+            if granularity == 'month':
+                return ts.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             raise ValueError(f"Invalid granularity: {granularity}")
 
-        # Query aggregations
-        results = self.db.query(
-            time_bucket.label('period'),
-            func.count(AgentMetric.id).label('total_operations'),
-            func.sum(case((AgentMetric.success == 1, 1), else_=0)).label('successful_operations'),
-            func.sum(case((AgentMetric.success == 0, 1), else_=0)).label('failed_operations'),
-            func.avg(AgentMetric.execution_time_ms).label('avg_execution_time_ms'),
-            func.sum(AgentMetric.tokens_used).label('total_tokens'),
-            func.sum(AgentMetric.cost_usd).label('total_cost_usd'),
-            func.avg(AgentMetric.quality_score).label('avg_quality_score'),
-        ).filter(
+        metrics = self.db.query(AgentMetric).filter(
             and_(
                 AgentMetric.timestamp >= start_date,
                 AgentMetric.timestamp <= end_date
             )
-        ).group_by(time_bucket).order_by(time_bucket).all()
+        ).all()
 
-        # Format results
+        buckets: Dict[datetime, Dict[str, Any]] = {}
+        for metric in metrics:
+            bucket = truncate_timestamp(metric.timestamp)
+            bucket_data = buckets.setdefault(bucket, {
+                'total_operations': 0,
+                'successful_operations': 0,
+                'failed_operations': 0,
+                'execution_times': [],
+                'total_tokens': 0,
+                'total_cost_usd': 0.0,
+                'quality_scores': []
+            })
+
+            bucket_data['total_operations'] += 1
+            if metric.success == 1:
+                bucket_data['successful_operations'] += 1
+            else:
+                bucket_data['failed_operations'] += 1
+
+            if metric.execution_time_ms is not None:
+                bucket_data['execution_times'].append(metric.execution_time_ms)
+            if metric.tokens_used is not None:
+                bucket_data['total_tokens'] += metric.tokens_used
+            if metric.cost_usd is not None:
+                bucket_data['total_cost_usd'] += metric.cost_usd
+            if metric.quality_score is not None:
+                bucket_data['quality_scores'].append(metric.quality_score)
+
         aggregations = []
-        for row in results:
-            success_rate = 0
-            if row.total_operations > 0:
-                success_rate = (row.successful_operations / row.total_operations) * 100
+        for period, data in sorted(buckets.items(), key=lambda item: item[0]):
+            success_rate = (data['successful_operations'] / data['total_operations'] * 100)
+            avg_execution_time = np.mean(data['execution_times']) if data['execution_times'] else 0
+            avg_quality = np.mean(data['quality_scores']) if data['quality_scores'] else 0
 
             aggregations.append({
-                'timestamp': row.period.isoformat() if row.period else None,
-                'total_operations': row.total_operations,
-                'successful_operations': row.successful_operations,
-                'failed_operations': row.failed_operations,
+                'timestamp': period.isoformat(),
+                'total_operations': data['total_operations'],
+                'successful_operations': data['successful_operations'],
+                'failed_operations': data['failed_operations'],
                 'success_rate': round(success_rate, 2),
-                'avg_execution_time_ms': round(row.avg_execution_time_ms or 0, 2),
-                'total_tokens': row.total_tokens or 0,
-                'total_cost_usd': round(row.total_cost_usd or 0, 4),
-                'avg_quality_score': round(row.avg_quality_score or 0, 2)
+                'avg_execution_time_ms': round(avg_execution_time, 2),
+                'total_tokens': data['total_tokens'],
+                'total_cost_usd': round(data['total_cost_usd'], 4),
+                'avg_quality_score': round(avg_quality, 2)
             })
 
         return aggregations
