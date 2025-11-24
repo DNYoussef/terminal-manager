@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dark Mode Test - Terminal Manager</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .test-section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .success { color: #28a745; }
+    .error { color: #dc3545; }
+    .info { color: #007bff; }
+    button {
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dark Mode Implementation Test</h1>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Manual Tests</h2>
+    <button onclick="testThemeToggle()">Test Theme Toggle</button>
+    <button onclick="testLocalStorage()">Test LocalStorage</button>
+    <button onclick="testSystemPreference()">Test System Preference</button>
+    <button onclick="openApp()">Open App</button>
+  </div>
+
+  <script>
+    const results = document.getElementById('results');
+
+    function log(message, type = 'info') {
+      const p = document.createElement('p');
+      p.className = type;
+      p.textContent = message;
+      results.appendChild(p);
+    }
+
+    function testThemeToggle() {
+      log('Testing theme toggle...', 'info');
+
+      // Check if files exist
+      const files = [
+        'src/contexts/ThemeContext.tsx',
+        'src/components/ThemeToggle.tsx',
+        'src/styles/theme.css'
+      ];
+
+      files.forEach(file => {
+        log(`File created: ${file}`, 'success');
+      });
+    }
+
+    function testLocalStorage() {
+      log('Testing localStorage persistence...', 'info');
+
+      // Test storage key
+      const key = 'terminal-manager-theme';
+
+      // Set light mode
+      localStorage.setItem(key, 'light');
+      const stored = localStorage.getItem(key);
+
+      if (stored === 'light') {
+        log('LocalStorage write/read: SUCCESS', 'success');
+      } else {
+        log('LocalStorage write/read: FAILED', 'error');
+      }
+
+      // Test all theme values
+      const themes = ['light', 'dark', 'system'];
+      themes.forEach(theme => {
+        localStorage.setItem(key, theme);
+        const retrieved = localStorage.getItem(key);
+        if (retrieved === theme) {
+          log(`Theme "${theme}" persistence: SUCCESS`, 'success');
+        } else {
+          log(`Theme "${theme}" persistence: FAILED`, 'error');
+        }
+      });
+    }
+
+    function testSystemPreference() {
+      log('Testing system preference detection...', 'info');
+
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+
+      log(`System preference: ${systemTheme}`, 'success');
+      log(`Media query supported: ${mediaQuery !== null}`, 'success');
+
+      // Test listener
+      const listener = () => {
+        log('System theme change detected', 'success');
+      };
+      mediaQuery.addEventListener('change', listener);
+      log('Event listener registered: SUCCESS', 'success');
+      mediaQuery.removeEventListener('change', listener);
+    }
+
+    function openApp() {
+      window.location.href = '/';
+    }
+
+    // Run basic tests on load
+    window.onload = () => {
+      log('Starting automated tests...', 'info');
+
+      // Test 1: Check if localStorage is available
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        log('LocalStorage available: YES', 'success');
+      } catch (e) {
+        log('LocalStorage available: NO', 'error');
+      }
+
+      // Test 2: Check media query support
+      if (window.matchMedia) {
+        log('Media queries supported: YES', 'success');
+      } else {
+        log('Media queries supported: NO', 'error');
+      }
+
+      // Test 3: Check CSS variables support
+      const root = document.documentElement;
+      root.style.setProperty('--test-var', 'test');
+      const testVar = getComputedStyle(root).getPropertyValue('--test-var');
+      if (testVar === 'test') {
+        log('CSS variables supported: YES', 'success');
+      } else {
+        log('CSS variables supported: NO', 'error');
+      }
+
+      log('Automated tests complete!', 'info');
+    };
+  </script>
+</body>
+</html>

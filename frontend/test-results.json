@@ -1,0 +1,812 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\17175\\terminal-manager\\frontend\\playwright.config.ts",
+    "rootDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 6
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/17175/terminal-manager/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/17175/terminal-manager/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/17175/terminal-manager/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/17175/terminal-manager/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Users/17175/terminal-manager/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 6
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "C:/Users/17175/terminal-manager/frontend/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 6,
+    "webServer": {
+      "command": "npm run dev",
+      "port": 3002,
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "migration-visual-verification.spec.ts",
+      "file": "migration-visual-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Material UI to Tailwind Migration - Visual Verification",
+          "file": "migration-visual-verification.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "AgentQualityTable - Visual verification and functionality",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 32613,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 8,
+                          "line": 4
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 2 |\u001b[39m\n \u001b[90m 3 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Material UI to Tailwind Migration - Visual Verification'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 4 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 5 |\u001b[39m     \u001b[90m// Wait for app to be ready\u001b[39m\n \u001b[90m 6 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 7 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'networkidle'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 8,
+                            "line": 4
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  2 |\n  3 | test.describe('Material UI to Tailwind Migration - Visual Verification', () => {\n> 4 |   test.beforeEach(async ({ page }) => {\n    |        ^\n  5 |     // Wait for app to be ready\n  6 |     await page.goto('/');\n  7 |     await page.waitForLoadState('networkidle');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 7
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n   5 |     // Wait for app to be ready\n   6 |     await page.goto('/');\n>  7 |     await page.waitForLoadState('networkidle');\n     |                ^\n   8 |   });\n   9 |\n  10 |   test('AgentQualityTable - Visual verification and functionality', async ({ page }) => {\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:7:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.779Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-9c91e-ification-and-functionality-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-9c91e-ification-and-functionality-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-9c91e-ification-and-functionality-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 8,
+                        "line": 4
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-5cf2645055a0231c72f9",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "QualityMetrics - Visual verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 32560,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 8,
+                          "line": 4
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 2 |\u001b[39m\n \u001b[90m 3 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Material UI to Tailwind Migration - Visual Verification'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 4 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 5 |\u001b[39m     \u001b[90m// Wait for app to be ready\u001b[39m\n \u001b[90m 6 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 7 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'networkidle'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 8,
+                            "line": 4
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  2 |\n  3 | test.describe('Material UI to Tailwind Migration - Visual Verification', () => {\n> 4 |   test.beforeEach(async ({ page }) => {\n    |        ^\n  5 |     // Wait for app to be ready\n  6 |     await page.goto('/');\n  7 |     await page.waitForLoadState('networkidle');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 7
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n   5 |     // Wait for app to be ready\n   6 |     await page.goto('/');\n>  7 |     await page.waitForLoadState('networkidle');\n     |                ^\n   8 |   });\n   9 |\n  10 |   test('AgentQualityTable - Visual verification and functionality', async ({ page }) => {\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:7:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.797Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-5faf0-trics---Visual-verification-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-5faf0-trics---Visual-verification-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-5faf0-trics---Visual-verification-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 8,
+                        "line": 4
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-a230922dbaf4783f44dd",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 21,
+              "column": 3
+            },
+            {
+              "title": "Dashboard (Feedback Loops) - Visual verification",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "timedOut",
+                      "duration": 32578,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 8,
+                          "line": 4
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 2 |\u001b[39m\n \u001b[90m 3 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Material UI to Tailwind Migration - Visual Verification'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 4 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 5 |\u001b[39m     \u001b[90m// Wait for app to be ready\u001b[39m\n \u001b[90m 6 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 7 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'networkidle'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 8,
+                            "line": 4
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  2 |\n  3 | test.describe('Material UI to Tailwind Migration - Visual Verification', () => {\n> 4 |   test.beforeEach(async ({ page }) => {\n    |        ^\n  5 |     // Wait for app to be ready\n  6 |     await page.goto('/');\n  7 |     await page.waitForLoadState('networkidle');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 7
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n   5 |     // Wait for app to be ready\n   6 |     await page.goto('/');\n>  7 |     await page.waitForLoadState('networkidle');\n     |                ^\n   8 |   });\n   9 |\n  10 |   test('AgentQualityTable - Visual verification and functionality', async ({ page }) => {\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:7:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.810Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-435e5-Loops---Visual-verification-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-435e5-Loops---Visual-verification-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-435e5-Loops---Visual-verification-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 8,
+                        "line": 4
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-fdbf3f74dab06ebff522",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 25,
+              "column": 3
+            },
+            {
+              "title": "ScheduleClaudeTaskDialog - Dialog functionality",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 32618,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 8,
+                          "line": 4
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 2 |\u001b[39m\n \u001b[90m 3 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Material UI to Tailwind Migration - Visual Verification'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 4 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 5 |\u001b[39m     \u001b[90m// Wait for app to be ready\u001b[39m\n \u001b[90m 6 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 7 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'networkidle'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 8,
+                            "line": 4
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  2 |\n  3 | test.describe('Material UI to Tailwind Migration - Visual Verification', () => {\n> 4 |   test.beforeEach(async ({ page }) => {\n    |        ^\n  5 |     // Wait for app to be ready\n  6 |     await page.goto('/');\n  7 |     await page.waitForLoadState('networkidle');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 7
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n   5 |     // Wait for app to be ready\n   6 |     await page.goto('/');\n>  7 |     await page.waitForLoadState('networkidle');\n     |                ^\n   8 |   });\n   9 |\n  10 |   test('AgentQualityTable - Visual verification and functionality', async ({ page }) => {\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:7:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.846Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-8af47-alog---Dialog-functionality-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-8af47-alog---Dialog-functionality-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-8af47-alog---Dialog-functionality-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 8,
+                        "line": 4
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-f2b0026b02ddf5966f6e",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 29,
+              "column": 3
+            },
+            {
+              "title": "Design System Components - Spinner, Progress, Alert, Table",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "timedOut",
+                      "duration": 32607,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 8,
+                          "line": 4
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 2 |\u001b[39m\n \u001b[90m 3 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Material UI to Tailwind Migration - Visual Verification'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 4 |\u001b[39m   test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m   |\u001b[39m        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 5 |\u001b[39m     \u001b[90m// Wait for app to be ready\u001b[39m\n \u001b[90m 6 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 7 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForLoadState(\u001b[32m'networkidle'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 8,
+                            "line": 4
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  2 |\n  3 | test.describe('Material UI to Tailwind Migration - Visual Verification', () => {\n> 4 |   test.beforeEach(async ({ page }) => {\n    |        ^\n  5 |     // Wait for app to be ready\n  6 |     await page.goto('/');\n  7 |     await page.waitForLoadState('networkidle');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:4:8"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 7
+                          },
+                          "message": "Error: page.waitForLoadState: Test timeout of 30000ms exceeded.\n\n   5 |     // Wait for app to be ready\n   6 |     await page.goto('/');\n>  7 |     await page.waitForLoadState('networkidle');\n     |                ^\n   8 |   });\n   9 |\n  10 |   test('AgentQualityTable - Visual verification and functionality', async ({ page }) => {\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:7:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.827Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-c35e1-pinner-Progress-Alert-Table-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-c35e1-pinner-Progress-Alert-Table-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\17175\\terminal-manager\\frontend\\test-results\\migration-visual-verificat-c35e1-pinner-Progress-Alert-Table-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 8,
+                        "line": 4
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-925cf9db73bd1c645372",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 33,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Visual Verification - Build Verification",
+          "file": "migration-visual-verification.spec.ts",
+          "line": 42,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Frontend build artifacts exist and are valid",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 6,
+                      "error": {
+                        "message": "ReferenceError: require is not defined",
+                        "stack": "ReferenceError: require is not defined\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:45:16",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 16,
+                          "line": 45
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 43 |\u001b[39m   test(\u001b[32m'Frontend build artifacts exist and are valid'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 44 |\u001b[39m     \u001b[90m// This test verifies the build succeeded and created proper artifacts\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 45 |\u001b[39m     \u001b[36mconst\u001b[39m fs \u001b[33m=\u001b[39m require(\u001b[32m'fs'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 46 |\u001b[39m     \u001b[36mconst\u001b[39m path \u001b[33m=\u001b[39m require(\u001b[32m'path'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 47 |\u001b[39m\n \u001b[90m 48 |\u001b[39m     \u001b[36mconst\u001b[39m distPath \u001b[33m=\u001b[39m path\u001b[33m.\u001b[39mjoin(__dirname\u001b[33m,\u001b[39m \u001b[32m'../../dist'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 45
+                          },
+                          "message": "ReferenceError: require is not defined\n\n  43 |   test('Frontend build artifacts exist and are valid', async () => {\n  44 |     // This test verifies the build succeeded and created proper artifacts\n> 45 |     const fs = require('fs');\n     |                ^\n  46 |     const path = require('path');\n  47 |\n  48 |     const distPath = path.join(__dirname, '../../dist');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:45:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:23.812Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 16,
+                        "line": 45
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-33638ab344e3f94ac31e",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 43,
+              "column": 3
+            },
+            {
+              "title": "TypeScript compilation successful - no MUI imports remain",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 6,
+                      "error": {
+                        "message": "ReferenceError: require is not defined",
+                        "stack": "ReferenceError: require is not defined\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:80:16",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 16,
+                          "line": 80
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 78 |\u001b[39m\n \u001b[90m 79 |\u001b[39m   test(\u001b[32m'TypeScript compilation successful - no MUI imports remain'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 80 |\u001b[39m     \u001b[36mconst\u001b[39m fs \u001b[33m=\u001b[39m require(\u001b[32m'fs'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 81 |\u001b[39m     \u001b[36mconst\u001b[39m path \u001b[33m=\u001b[39m require(\u001b[32m'path'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 82 |\u001b[39m     \u001b[36mconst\u001b[39m glob \u001b[33m=\u001b[39m require(\u001b[32m'glob'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 83 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 80
+                          },
+                          "message": "ReferenceError: require is not defined\n\n  78 |\n  79 |   test('TypeScript compilation successful - no MUI imports remain', async () => {\n> 80 |     const fs = require('fs');\n     |                ^\n  81 |     const path = require('path');\n  82 |     const glob = require('glob');\n  83 |\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:80:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:24.889Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 16,
+                        "line": 80
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-02914c1f7363903098d3",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 79,
+              "column": 3
+            },
+            {
+              "title": "New design-system components exist and compile",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 9,
+                      "error": {
+                        "message": "ReferenceError: require is not defined",
+                        "stack": "ReferenceError: require is not defined\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:112:16",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 16,
+                          "line": 112
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 110 |\u001b[39m\n \u001b[90m 111 |\u001b[39m   test(\u001b[32m'New design-system components exist and compile'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 112 |\u001b[39m     \u001b[36mconst\u001b[39m fs \u001b[33m=\u001b[39m require(\u001b[32m'fs'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 113 |\u001b[39m     \u001b[36mconst\u001b[39m path \u001b[33m=\u001b[39m require(\u001b[32m'path'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 114 |\u001b[39m\n \u001b[90m 115 |\u001b[39m     \u001b[36mconst\u001b[39m newComponents \u001b[33m=\u001b[39m [\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 112
+                          },
+                          "message": "ReferenceError: require is not defined\n\n  110 |\n  111 |   test('New design-system components exist and compile', async () => {\n> 112 |     const fs = require('fs');\n      |                ^\n  113 |     const path = require('path');\n  114 |\n  115 |     const newComponents = [\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:112:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:25.884Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 16,
+                        "line": 112
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-acd98d22cf2d7fb1395f",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 111,
+              "column": 3
+            },
+            {
+              "title": "package.json has no MUI dependencies",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 5,
+                      "status": "failed",
+                      "duration": 8,
+                      "error": {
+                        "message": "ReferenceError: require is not defined",
+                        "stack": "ReferenceError: require is not defined\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:140:16",
+                        "location": {
+                          "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                          "column": 16,
+                          "line": 140
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 138 |\u001b[39m\n \u001b[90m 139 |\u001b[39m   test(\u001b[32m'package.json has no MUI dependencies'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 140 |\u001b[39m     \u001b[36mconst\u001b[39m fs \u001b[33m=\u001b[39m require(\u001b[32m'fs'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 141 |\u001b[39m     \u001b[36mconst\u001b[39m path \u001b[33m=\u001b[39m require(\u001b[32m'path'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 142 |\u001b[39m\n \u001b[90m 143 |\u001b[39m     \u001b[36mconst\u001b[39m packageJsonPath \u001b[33m=\u001b[39m path\u001b[33m.\u001b[39mjoin(__dirname\u001b[33m,\u001b[39m \u001b[32m'../../package.json'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                            "column": 16,
+                            "line": 140
+                          },
+                          "message": "ReferenceError: require is not defined\n\n  138 |\n  139 |   test('package.json has no MUI dependencies', async () => {\n> 140 |     const fs = require('fs');\n      |                ^\n  141 |     const path = require('path');\n  142 |\n  143 |     const packageJsonPath = path.join(__dirname, '../../package.json');\n    at C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts:140:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-20T11:23:27.109Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "C:\\Users\\17175\\terminal-manager\\frontend\\tests\\e2e\\migration-visual-verification.spec.ts",
+                        "column": 16,
+                        "line": 140
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "816492e4b058b01689b4-97c97443c13e229cd4f4",
+              "file": "migration-visual-verification.spec.ts",
+              "line": 139,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-11-20T11:23:21.832Z",
+    "duration": 35486.322,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 9,
+    "flaky": 0
+  }
+}

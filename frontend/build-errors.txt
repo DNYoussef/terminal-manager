@@ -1,0 +1,61 @@
+
+> terminal-manager-frontend@1.0.0 build
+> tsc -b && vite build
+
+src/components/agents/Charts.tsx(130,13): error TS2322: Type 'PieData[]' is not assignable to type 'ChartDataInput[]'.
+  Type 'PieData' is not assignable to type 'ChartDataInput'.
+    Index signature for type 'string' is missing in type 'PieData'.
+src/components/BestOfN/index.tsx(11,3): error TS2614: Module '"./ComparisonView"' has no exported member 'AgentResult'. Did you mean to use 'import AgentResult from "./ComparisonView"' instead?
+src/components/BestOfN/index.tsx(12,3): error TS2614: Module '"./ComparisonView"' has no exported member 'ExecutionResults'. Did you mean to use 'import ExecutionResults from "./ComparisonView"' instead?
+src/components/BestOfN/index.tsx(13,3): error TS2614: Module '"./ComparisonView"' has no exported member 'ComparisonViewProps'. Did you mean to use 'import ComparisonViewProps from "./ComparisonView"' instead?
+src/components/design-system/Input.tsx(26,18): error TS2320: Interface 'InputProps' cannot simultaneously extend types 'InputHTMLAttributes<HTMLInputElement>' and 'VariantProps<(props?: ConfigVariants<{ variant: { default: string; error: string; success: string; }; size: { sm: string; md: string; lg: string; }; }> & ClassProp) => string>'.
+  Named property 'size' of types 'InputHTMLAttributes<HTMLInputElement>' and 'VariantProps<(props?: ConfigVariants<{ variant: { default: string; error: string; success: string; }; size: { sm: string; md: string; lg: string; }; }> & ClassProp) => string>' are not identical.
+src/components/design-system/Input.tsx(38,74): error TS2322: Type 'number' is not assignable to type '"sm" | "md" | "lg"'.
+src/components/memory/MemoryVault.tsx(135,81): error TS2339: Property 'capitalize' does not exist on type '"short-term" | "mid-term" | "long-term"'.
+  Property 'capitalize' does not exist on type '"short-term"'.
+src/components/NotificationSettings.tsx(124,9): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'string | BufferSource'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+          Types of property '[Symbol.toStringTag]' are incompatible.
+            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+src/components/RecurringTaskTemplate.tsx(2,10): error TS2614: Module '"cron-parser"' has no exported member 'parseExpression'. Did you mean to use 'import parseExpression from "cron-parser"' instead?
+src/components/TaskReminders.tsx(73,7): error TS2353: Object literal may only specify known properties, and 'vibrate' does not exist in type 'NotificationOptions'.
+src/hooks/useNotifications.tsx(164,9): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'string | BufferSource'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+          Types of property '[Symbol.toStringTag]' are incompatible.
+            Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+src/store/agentsSlice.ts(258,20): error TS2339: Property 'name' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(259,20): error TS2339: Property 'name' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(262,20): error TS2339: Property 'role' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(263,20): error TS2339: Property 'role' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(266,20): error TS2339: Property 'metadata' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(267,20): error TS2339: Property 'metadata' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(270,20): error TS2339: Property 'status' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(271,20): error TS2339: Property 'status' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(274,20): error TS2339: Property 'budget' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(274,47): error TS2339: Property 'budget' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(275,20): error TS2339: Property 'budget' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(275,47): error TS2339: Property 'budget' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(278,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(279,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(282,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(283,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(286,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(287,20): error TS2339: Property 'performance' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(290,20): error TS2339: Property 'name' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(291,20): error TS2339: Property 'name' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(302,49): error TS2339: Property 'agent_id' does not exist on type 'unknown'.
+src/store/agentsSlice.ts(345,3): error TS2322: Type '(role: AgentRole) => unknown[]' is not assignable to type '(role: AgentRole) => AgentIdentity[]'.
+  Type 'unknown[]' is not assignable to type 'AgentIdentity[]'.
+    Type '{}' is missing the following properties from type 'AgentIdentity': agent_id, name, role, capabilities, and 5 more.
+src/store/agentsSlice.ts(350,3): error TS2322: Type '(category: AgentCategory) => unknown[]' is not assignable to type '(category: AgentCategory) => AgentIdentity[]'.
+  Type 'unknown[]' is not assignable to type 'AgentIdentity[]'.
+    Type '{}' is missing the following properties from type 'AgentIdentity': agent_id, name, role, capabilities, and 5 more.
+src/store/searchStore.tsx(157,36): error TS2554: Expected 2 arguments, but got 3.
+src/store/searchStore.tsx(162,31): error TS2554: Expected 2 arguments, but got 3.
+src/store/searchStore.tsx(172,10): error TS2554: Expected 3 arguments, but got 2.

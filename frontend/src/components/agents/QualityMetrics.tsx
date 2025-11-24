@@ -1,21 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Tabs,
-  Tab,
-  CircularProgress,
-  Alert,
-  Chip,
-  Paper
-} from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
+import { TrendingUp, TrendingDown, CheckCircle, AlertCircle } from 'lucide-react';
 import ViolationBreakdown from './ViolationBreakdown';
 import QualityTrends from './QualityTrends';
 import AgentQualityTable from './AgentQualityTable';
@@ -181,9 +165,9 @@ const QualityMetrics: React.FC = () => {
   const getTrendIcon = (direction: string) => {
     switch (direction) {
       case 'up':
-        return <TrendingUpIcon sx={{ color: '#4caf50', fontSize: 20 }} />;
+        return <TrendingUp className="w-5 h-5 text-green-500" />;
       case 'down':
-        return <TrendingDownIcon sx={{ color: '#f44336', fontSize: 20 }} />;
+        return <TrendingDown className="w-5 h-5 text-red-500" />;
       default:
         return null;
     }
@@ -205,127 +189,129 @@ const QualityMetrics: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
+      <div className="m-4 p-4 bg-red-50 text-red-700 border border-red-200 rounded-md flex items-center">
+        <AlertCircle className="w-5 h-5 mr-2" />
         {error}
-      </Alert>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <div className="p-6">
+      <h4 className="text-2xl font-bold mb-6 text-gray-800">
         Code Quality Metrics
-      </Typography>
+      </h4>
 
       {/* Overall Quality Dashboard */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="textSecondary" gutterBottom>
-                Overall Quality Score
-              </Typography>
-              <Box display="flex" alignItems="center" justifyContent="center" my={2}>
-                <Box position="relative" display="inline-flex">
-                  <CircularProgress
-                    variant="determinate"
-                    value={qualityScore?.overall || 0}
-                    size={120}
-                    thickness={6}
-                    sx={{
-                      color: getGradeColor(qualityScore?.grade || 'F')
-                    }}
-                  />
-                  <Box
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    bottom={0}
-                    right={0}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    flexDirection="column"
-                  >
-                    <Typography variant="h3" component="div" color="textPrimary">
-                      {qualityScore?.overall || 0}
-                    </Typography>
-                    <Typography variant="h6" color="textSecondary">
-                      Grade {qualityScore?.grade || 'F'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-              <Box display="flex" alignItems="center" justifyContent="center">
-                {getTrendIcon(qualityScore?.trend.direction || 'stable')}
-                <Typography variant="body2" color="textSecondary" ml={1}>
-                  {qualityScore?.trend.change > 0 ? '+' : ''}{qualityScore?.trend.change} from {qualityScore?.trend.period}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+        <div className="md:col-span-4">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h6 className="text-gray-500 font-medium mb-4">
+              Overall Quality Score
+            </h6>
+            <div className="flex flex-col items-center justify-center my-4">
+              <div className="relative flex items-center justify-center w-32 h-32">
+                {/* Simple CSS Circle for Score */}
+                <svg className="w-full h-full" viewBox="0 0 100 100">
+                  <circle
+                    className="text-gray-200 stroke-current"
+                    strokeWidth="8"
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="transparent"
+                  ></circle>
+                  <circle
+                    className="text-current stroke-current transition-all duration-500 ease-out"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="transparent"
+                    strokeDasharray={`${(qualityScore?.overall || 0) * 2.51} 251`}
+                    transform="rotate(-90 50 50)"
+                    style={{ color: getGradeColor(qualityScore?.grade || 'F') }}
+                  ></circle>
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-3xl font-bold text-gray-800">
+                    {qualityScore?.overall || 0}
+                  </span>
+                  <span className="text-lg text-gray-500 font-medium">
+                    Grade {qualityScore?.grade || 'F'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center mt-2">
+              {getTrendIcon(qualityScore?.trend.direction || 'stable')}
+              <span className="text-sm text-gray-500 ml-2">
+                {qualityScore?.trend.change > 0 ? '+' : ''}{qualityScore?.trend.change} from {qualityScore?.trend.period}
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" color="textSecondary" gutterBottom>
-                Quality Distribution
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                {qualityScore?.distribution.map((dist) => (
-                  <Box key={dist.grade} sx={{ mb: 2 }}>
-                    <Box display="flex" justifyContent="space-between" mb={0.5}>
-                      <Typography variant="body2">
-                        Grade {dist.grade}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {dist.count} agents ({dist.percentage}%)
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 24,
-                        bgcolor: '#f5f5f5',
-                        borderRadius: 1,
-                        overflow: 'hidden'
+        <div className="md:col-span-8">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h6 className="text-gray-500 font-medium mb-4">
+              Quality Distribution
+            </h6>
+            <div className="mt-4 space-y-4">
+              {qualityScore?.distribution.map((dist) => (
+                <div key={dist.grade}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">
+                      Grade {dist.grade}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {dist.count} agents ({dist.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-6 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300 ease-out"
+                      style={{
+                        width: `${dist.percentage}%`,
+                        backgroundColor: getGradeColor(dist.grade),
                       }}
-                    >
-                      <Box
-                        sx={{
-                          width: `${dist.percentage}%`,
-                          height: '100%',
-                          bgcolor: getGradeColor(dist.grade),
-                          transition: 'width 0.3s ease'
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Tabs for different views */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Violations" />
-          <Tab label="Quality Trends" />
-          <Tab label="Agent Scores" />
-          <Tab label="Quality Gates" />
-        </Tabs>
-      </Box>
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="flex space-x-8" aria-label="Tabs">
+          {['Violations', 'Quality Trends', 'Agent Scores', 'Quality Gates'].map((tabName, index) => (
+            <button
+              key={tabName}
+              onClick={() => setActiveTab(index)}
+              className={`
+                py-4 px-1 border-b-2 font-medium text-sm
+                ${activeTab === index
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+              `}
+            >
+              {tabName}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {/* Tab Panels */}
       {activeTab === 0 && (
@@ -344,56 +330,55 @@ const QualityMetrics: React.FC = () => {
       )}
 
       {activeTab === 3 && (
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h6 className="text-lg font-semibold text-gray-800 mb-4">
             Recent Quality Gate Events
-          </Typography>
+          </h6>
           {qualityGates.length === 0 ? (
-            <Typography variant="body2" color="textSecondary">
+            <p className="text-gray-500 text-sm">
               No quality gate events yet
-            </Typography>
+            </p>
           ) : (
-            <Box>
+            <div className="space-y-3">
               {qualityGates.map((gate) => (
-                <Box
+                <div
                   key={gate.id}
-                  sx={{
-                    p: 2,
-                    mb: 1,
-                    border: 1,
-                    borderColor: gate.status === 'passed' ? '#4caf50' : '#f44336',
-                    borderRadius: 1,
-                    bgcolor: gate.status === 'passed' ? '#f1f8f4' : '#fef1f1'
-                  }}
+                  className={`p-4 border rounded-md ${
+                    gate.status === 'passed'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-red-500 bg-red-50'
+                  }`}
                 >
-                  <Box display="flex" alignItems="center" mb={1}>
+                  <div className="flex items-center mb-2">
                     {gate.status === 'passed' ? (
-                      <CheckCircleIcon sx={{ color: '#4caf50', mr: 1 }} />
+                      <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                     ) : (
-                      <ErrorIcon sx={{ color: '#f44336', mr: 1 }} />
+                      <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
                     )}
-                    <Typography variant="body1" fontWeight="bold">
+                    <span className="font-bold text-gray-900">
                       Agent "{gate.agent_name}" {gate.status === 'passed' ? 'passed' : 'blocked by'} quality gate
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="textSecondary" ml={4}>
-                    Score: {gate.score} (threshold: {gate.threshold})
-                  </Typography>
-                  {gate.violations.length > 0 && (
-                    <Box ml={4} mt={1}>
-                      <Typography variant="body2" color="error">
-                        Violations: {gate.violations.join(', ')}
-                      </Typography>
-                    </Box>
-                  )}
-                  <Typography variant="caption" color="textSecondary" ml={4}>
-                    {formatTimestamp(gate.timestamp)}
-                  </Typography>
-                </Box>
+                    </span>
+                  </div>
+                  <div className="ml-7">
+                    <p className="text-sm text-gray-600">
+                      Score: {gate.score} (threshold: {gate.threshold})
+                    </p>
+                    {gate.violations.length > 0 && (
+                      <div className="mt-1">
+                        <p className="text-sm text-red-600 font-medium">
+                          Violations: {gate.violations.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatTimestamp(gate.timestamp)}
+                    </p>
+                  </div>
+                </div>
               ))}
-            </Box>
+            </div>
           )}
-        </Paper>
+        </div>
       )}
 
       {/* Violation Details Modal */}
@@ -401,7 +386,7 @@ const QualityMetrics: React.FC = () => {
         violationId={selectedViolation}
         onClose={() => setSelectedViolation(null)}
       />
-    </Box>
+    </div>
   );
 };
 

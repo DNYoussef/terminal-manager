@@ -1,38 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Tabs,
-  Tab,
-  Button,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Alert,
-  CircularProgress,
-  LinearProgress
-} from '@mui/material';
-import {
-  CheckCircle,
-  Cancel,
-  Info,
-  TrendingUp,
-  Settings,
-  Speed,
-  Refresh
-} from '@mui/icons-material';
+import { CheckCircle, XCircle, Info, TrendingUp, Settings, Zap, RefreshCw } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
@@ -149,37 +117,35 @@ const FeedbackLoopsDashboard: React.FC = () => {
 
   // Render statistics card
   const renderStatsCard = (title: string, stats: any, icon: React.ReactNode) => (
-    <Card>
-      <CardContent>
-        <Box display="flex" alignItems="center" mb={2}>
-          {icon}
-          <Typography variant="h6" ml={1}>
-            {title}
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="textSecondary">
-          Total runs: {stats.runs}
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          Last run: {new Date(stats.last_run).toLocaleString()}
-        </Typography>
-        {title === 'Prompt Refinement' && (
-          <Typography variant="body2" color="textSecondary">
-            Total refinements: {stats.total_refinements}
-          </Typography>
-        )}
-        {title === 'Tool Tuning' && (
-          <Typography variant="body2" color="textSecondary">
-            Total recommendations: {stats.total_recommendations}
-          </Typography>
-        )}
-        {title === 'Workflow Optimizer' && (
-          <Typography variant="body2" color="textSecondary">
-            Total optimizations: {stats.total_optimizations}
-          </Typography>
-        )}
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-lg shadow p-6">
+      <div className="flex items-center mb-4 text-blue-600">
+        {icon}
+        <h3 className="text-lg font-semibold ml-2 text-gray-800">
+          {title}
+        </h3>
+      </div>
+      <p className="text-sm text-gray-600">
+        Total runs: {stats.runs}
+      </p>
+      <p className="text-sm text-gray-600">
+        Last run: {new Date(stats.last_run).toLocaleString()}
+      </p>
+      {title === 'Prompt Refinement' && (
+        <p className="text-sm text-gray-600">
+          Total refinements: {stats.total_refinements}
+        </p>
+      )}
+      {title === 'Tool Tuning' && (
+        <p className="text-sm text-gray-600">
+          Total recommendations: {stats.total_recommendations}
+        </p>
+      )}
+      {title === 'Workflow Optimizer' && (
+        <p className="text-sm text-gray-600">
+          Total optimizations: {stats.total_optimizations}
+        </p>
+      )}
+    </div>
   );
 
   // Render recommendation item
@@ -209,71 +175,52 @@ const FeedbackLoopsDashboard: React.FC = () => {
     };
 
     return (
-      <ListItem key={rec.id} divider>
-        <ListItemText
-          primary={getTitle()}
-          secondary={
-            <>
-              <Typography variant="body2" component="span">
-                {getSecondary()}
-              </Typography>
-              <br />
-              <Typography variant="caption" color="textSecondary">
-                {new Date(rec.timestamp).toLocaleString()}
-              </Typography>
-            </>
-          }
-        />
-        <ListItemSecondaryAction>
-          <IconButton
-            edge="end"
-            onClick={() => openApprovalDialog(rec)}
-            color="primary"
-          >
-            <Info />
-          </IconButton>
-        </ListItemSecondaryAction>
-      </ListItem>
+      <div key={rec.id} className="border-b border-gray-200 last:border-0 py-4 flex justify-between items-start">
+        <div>
+          <h4 className="text-base font-medium text-gray-900">{getTitle()}</h4>
+          <div className="mt-1">
+            <span className="text-sm text-gray-600">{getSecondary()}</span>
+            <br />
+            <span className="text-xs text-gray-400">
+              {new Date(rec.timestamp).toLocaleString()}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => openApprovalDialog(rec)}
+          className="text-blue-600 hover:text-blue-800 p-2"
+        >
+          <Info className="w-5 h-5" />
+        </button>
+      </div>
     );
   };
 
   // Render approval dialog
   const renderApprovalDialog = () => {
-    if (!selectedRecommendation) return null;
+    if (!selectedRecommendation || !approvalDialogOpen) return null;
 
     const renderDetails = () => {
       if (selectedRecommendation.type === 'prompt_refinement') {
         const data = selectedRecommendation.data;
         return (
           <>
-            <Typography variant="subtitle2" gutterBottom>
-              Changes:
-            </Typography>
-            <List dense>
+            <h5 className="text-sm font-semibold text-gray-700 mb-2">Changes:</h5>
+            <ul className="list-disc pl-5 space-y-1 mb-4 text-sm text-gray-600">
               {data.changes?.map((change: any, idx: number) => (
-                <ListItem key={idx}>
-                  <ListItemText
-                    primary={change.change}
-                    secondary={`Pattern: ${change.pattern} (${change.count} occurrences)`}
-                  />
-                </ListItem>
+                <li key={idx}>
+                  <span className="font-medium">{change.change}</span>
+                  <span className="block text-xs text-gray-500">Pattern: {change.pattern} ({change.count} occurrences)</span>
+                </li>
               ))}
-            </List>
-            <Typography variant="subtitle2" gutterBottom mt={2}>
-              A/B Test Results:
-            </Typography>
-            <Typography variant="body2">
-              Original success rate: {(data.test_results?.originalSuccessRate * 100).toFixed(1)}%
-            </Typography>
-            <Typography variant="body2">
-              Refined success rate: {(data.test_results?.refinedSuccessRate * 100).toFixed(1)}%
-            </Typography>
-            <Typography variant="body2">
-              Improvement: {(data.test_results?.improvement * 100).toFixed(1)}%
-            </Typography>
-            <Typography variant="body2">
-              P-value: {data.test_results?.pValue?.toFixed(4)}
-            </Typography>
+            </ul>
+            <h5 className="text-sm font-semibold text-gray-700 mb-2">A/B Test Results:</h5>
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>Original success rate: {(data.test_results?.originalSuccessRate * 100).toFixed(1)}%</p>
+              <p>Refined success rate: {(data.test_results?.refinedSuccessRate * 100).toFixed(1)}%</p>
+              <p>Improvement: {(data.test_results?.improvement * 100).toFixed(1)}%</p>
+              <p>P-value: {data.test_results?.pValue?.toFixed(4)}</p>
+            </div>
           </>
         );
       } else if (selectedRecommendation.type === 'tool_tuning') {
@@ -282,53 +229,41 @@ const FeedbackLoopsDashboard: React.FC = () => {
           <>
             {data.remove_tools?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom>
-                  Tools to Remove:
-                </Typography>
-                <List dense>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Tools to Remove:</h5>
+                <ul className="list-disc pl-5 space-y-1 mb-4 text-sm text-gray-600">
                   {data.remove_tools.map((tool: any, idx: number) => (
-                    <ListItem key={idx}>
-                      <ListItemText
-                        primary={tool.tool}
-                        secondary={tool.reason}
-                      />
-                    </ListItem>
+                    <li key={idx}>
+                      <span className="font-medium">{tool.tool}</span>
+                      <span className="block text-xs text-gray-500">{tool.reason}</span>
+                    </li>
                   ))}
-                </List>
+                </ul>
               </>
             )}
             {data.allow_tools?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom mt={2}>
-                  Tools to Allow:
-                </Typography>
-                <List dense>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Tools to Allow:</h5>
+                <ul className="list-disc pl-5 space-y-1 mb-4 text-sm text-gray-600">
                   {data.allow_tools.map((tool: any, idx: number) => (
-                    <ListItem key={idx}>
-                      <ListItemText
-                        primary={tool.tool}
-                        secondary={tool.justification}
-                      />
-                    </ListItem>
+                    <li key={idx}>
+                      <span className="font-medium">{tool.tool}</span>
+                      <span className="block text-xs text-gray-500">{tool.justification}</span>
+                    </li>
                   ))}
-                </List>
+                </ul>
               </>
             )}
             {data.encourage_patterns?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom mt={2}>
-                  Successful Patterns:
-                </Typography>
-                <List dense>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Successful Patterns:</h5>
+                <ul className="list-disc pl-5 space-y-1 mb-4 text-sm text-gray-600">
                   {data.encourage_patterns.slice(0, 5).map((pattern: any, idx: number) => (
-                    <ListItem key={idx}>
-                      <ListItemText
-                        primary={pattern.tools.join(' + ')}
-                        secondary={`Success rate: ${(pattern.success_rate * 100).toFixed(1)}% (${pattern.usage_count} uses)`}
-                      />
-                    </ListItem>
+                    <li key={idx}>
+                      <span className="font-medium">{pattern.tools.join(' + ')}</span>
+                      <span className="block text-xs text-gray-500">Success rate: ${(pattern.success_rate * 100).toFixed(1)}% ({pattern.usage_count} uses)</span>
+                    </li>
                   ))}
-                </List>
+                </ul>
               </>
             )}
           </>
@@ -337,53 +272,39 @@ const FeedbackLoopsDashboard: React.FC = () => {
         const data = selectedRecommendation.data;
         return (
           <>
-            <Typography variant="subtitle2" gutterBottom>
-              Simulation Results:
-            </Typography>
-            <Typography variant="body2">
-              Current duration: {data.simulation?.current_duration?.toFixed(2)}ms
-            </Typography>
-            <Typography variant="body2">
-              Optimized duration: {data.simulation?.optimized_duration?.toFixed(2)}ms
-            </Typography>
-            <Typography variant="body2" color="primary">
-              Time improvement: {data.simulation?.time_improvement?.toFixed(1)}%
-            </Typography>
-            <Typography variant="body2" color="primary">
-              Cost improvement: {data.simulation?.cost_improvement?.toFixed(1)}%
-            </Typography>
+            <h5 className="text-sm font-semibold text-gray-700 mb-2">Simulation Results:</h5>
+            <div className="text-sm text-gray-600 space-y-1 mb-4">
+              <p>Current duration: {data.simulation?.current_duration?.toFixed(2)}ms</p>
+              <p>Optimized duration: {data.simulation?.optimized_duration?.toFixed(2)}ms</p>
+              <p className="text-blue-600 font-medium">Time improvement: {data.simulation?.time_improvement?.toFixed(1)}%</p>
+              <p className="text-blue-600 font-medium">Cost improvement: {data.simulation?.cost_improvement?.toFixed(1)}%</p>
+            </div>
 
             {data.bottlenecks?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom mt={2}>
-                  Bottlenecks:
-                </Typography>
-                <List dense>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Bottlenecks:</h5>
+                <ul className="list-disc pl-5 space-y-1 mb-4 text-sm text-gray-600">
                   {data.bottlenecks.map((bottleneck: any, idx: number) => (
-                    <ListItem key={idx}>
-                      <ListItemText
-                        primary={bottleneck.agent}
-                        secondary={`Avg time: ${bottleneck.avg_time?.toFixed(2)}ms (${bottleneck.executions} runs)`}
-                      />
-                    </ListItem>
+                    <li key={idx}>
+                      <span className="font-medium">{bottleneck.agent}</span>
+                      <span className="block text-xs text-gray-500">Avg time: {bottleneck.avg_time?.toFixed(2)}ms ({bottleneck.executions} runs)</span>
+                    </li>
                   ))}
-                </List>
+                </ul>
               </>
             )}
 
             {data.parallelize?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom mt={2}>
-                  Parallelization Opportunities: {data.parallelize.length}
-                </Typography>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Parallelization Opportunities:</h5>
+                <p className="text-sm text-gray-600 mb-4">{data.parallelize.length} opportunities identified</p>
               </>
             )}
 
             {data.remove?.length > 0 && (
               <>
-                <Typography variant="subtitle2" gutterBottom mt={2}>
-                  Redundant Steps: {data.remove.length}
-                </Typography>
+                <h5 className="text-sm font-semibold text-gray-700 mb-2">Redundant Steps:</h5>
+                <p className="text-sm text-gray-600 mb-4">{data.remove.length} redundant steps identified</p>
               </>
             )}
           </>
@@ -392,112 +313,139 @@ const FeedbackLoopsDashboard: React.FC = () => {
     };
 
     return (
-      <Dialog
-        open={approvalDialogOpen}
-        onClose={() => setApprovalDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          Review Recommendation
-          <Chip
-            label={selectedRecommendation.type.replace(/_/g, ' ')}
-            size="small"
-            color="primary"
-            sx={{ ml: 2 }}
-          />
-        </DialogTitle>
-        <DialogContent dividers>
-          {renderDetails()}
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">Review Recommendation</h3>
+              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                {selectedRecommendation.type.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <button 
+              onClick={() => setApprovalDialogOpen(false)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <span className="sr-only">Close</span>
+              <XCircle className="w-6 h-6" />
+            </button>
+          </div>
+          
+          <div className="p-6 overflow-y-auto flex-1">
+            {renderDetails()}
 
-          <TextField
-            label="Approval Notes (optional)"
-            multiline
-            rows={3}
-            fullWidth
-            value={approvalNotes}
-            onChange={(e) => setApprovalNotes(e.target.value)}
-            sx={{ mt: 3 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => handleApprove(false)}
-            color="error"
-            startIcon={<Cancel />}
-            disabled={loading}
-          >
-            Reject
-          </Button>
-          <Button
-            onClick={() => handleApprove(true)}
-            color="primary"
-            variant="contained"
-            startIcon={<CheckCircle />}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={20} /> : 'Approve & Apply'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Approval Notes (optional)
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                rows={3}
+                value={approvalNotes}
+                onChange={(e) => setApprovalNotes(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            <button
+              onClick={() => handleApprove(false)}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+            >
+              <XCircle className="w-4 h-4 mr-2" />
+              Reject
+            </button>
+            <button
+              onClick={() => handleApprove(true)}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              Approve & Apply
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Feedback Loops Dashboard</Typography>
-        <Button
-          startIcon={<Refresh />}
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h4 className="text-2xl font-bold text-gray-800">Feedback Loops Dashboard</h4>
+        <button
           onClick={() => {
             fetchStats();
             fetchPendingRecommendations();
           }}
+          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
+          <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
-        </Button>
-      </Box>
+        </button>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
+          <XCircle className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0" />
+          <span className="text-sm text-red-700">{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-500">
+            <span className="sr-only">Dismiss</span>
+            <XCircle className="w-5 h-5" />
+          </button>
+        </div>
       )}
 
       {/* Statistics Cards */}
       {stats && (
-        <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} md={4}>
-            {renderStatsCard('Prompt Refinement', stats.prompt_refinement, <TrendingUp color="primary" />)}
-          </Grid>
-          <Grid item xs={12} md={4}>
-            {renderStatsCard('Tool Tuning', stats.tool_tuning, <Settings color="primary" />)}
-          </Grid>
-          <Grid item xs={12} md={4}>
-            {renderStatsCard('Workflow Optimizer', stats.workflow_optimizer, <Speed color="primary" />)}
-          </Grid>
-        </Grid>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {renderStatsCard('Prompt Refinement', stats.prompt_refinement, <TrendingUp className="w-6 h-6" />)}
+          {renderStatsCard('Tool Tuning', stats.tool_tuning, <Settings className="w-6 h-6" />)}
+          {renderStatsCard('Workflow Optimizer', stats.workflow_optimizer, <Zap className="w-6 h-6" />)}
+        </div>
       )}
 
       {/* Pending Approvals */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h6 className="text-lg font-semibold text-gray-800">
             Pending Approvals ({pendingRecommendations.length})
-          </Typography>
+          </h6>
+        </div>
 
+        <div className="p-6">
           {pendingRecommendations.length === 0 ? (
-            <Alert severity="info">No pending approvals</Alert>
+            <div className="p-4 bg-blue-50 text-blue-700 rounded-md flex items-center">
+              <Info className="w-5 h-5 mr-2" />
+              No pending approvals
+            </div>
           ) : (
             <>
-              <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-                <Tab label="All" />
-                <Tab label="Prompt Refinement" />
-                <Tab label="Tool Tuning" />
-                <Tab label="Workflow Optimization" />
-              </Tabs>
+              <div className="border-b border-gray-200 mb-4">
+                <nav className="flex space-x-8">
+                  {['All', 'Prompt Refinement', 'Tool Tuning', 'Workflow Optimization'].map((tab, index) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(index)}
+                      className={`
+                        py-4 px-1 border-b-2 font-medium text-sm
+                        ${activeTab === index
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                      `}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </nav>
+              </div>
 
-              <List>
+              <div className="space-y-1">
                 {pendingRecommendations
                   .filter(rec => {
                     if (activeTab === 0) return true;
@@ -507,15 +455,15 @@ const FeedbackLoopsDashboard: React.FC = () => {
                     return true;
                   })
                   .map(renderRecommendation)}
-              </List>
+              </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Approval Dialog */}
       {renderApprovalDialog()}
-    </Box>
+    </div>
   );
 };
 

@@ -9,6 +9,7 @@ import { MCPToolsPanel } from './components/mcp/MCPToolsPanel';
 import { Calendar } from './components/scheduling/Calendar';
 import { ClaudeScheduler } from './pages/ClaudeScheduler';
 import { MemoryVault } from './components/memory/MemoryVault';
+import { CommandPalette } from './components/ui/CommandPalette';
 import { useTerminalsStore } from './store/searchStore';
 import './App.css';
 
@@ -21,6 +22,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <CommandPalette />
       <div className="min-h-screen bg-slate-900">
         {/* Navigation Bar */}
         <nav className="h-16 bg-slate-800 border-b border-slate-700 flex items-center px-6">
