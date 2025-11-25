@@ -1,4 +1,4 @@
-"""
+﻿"""
 Obsidian Integration for Memory MCP
 Syncs scheduled tasks to Obsidian vault as markdown notes
 
@@ -13,9 +13,14 @@ RACE CONDITION FIX: Uses file locking to prevent concurrent write corruption
 """
 import os
 import json
-import fcntl  # Unix file locking
-import msvcrt  # Windows file locking (fallback)
 import sys
+# Platform-specific file locking imports
+if sys.platform == 'win32':
+    import msvcrt  # Windows file locking
+    fcntl = None  # type: ignore
+else:
+    import fcntl  # Unix file locking
+    msvcrt = None  # type: ignore
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
@@ -464,20 +469,20 @@ Back to: [[Tasks/{task_data['status'].capitalize()}/{self._sanitize_filename(tas
     def _priority_emoji(self, priority: str) -> str:
         """Get emoji for priority level"""
         emojis = {
-            "low": "🟢",
-            "medium": "🟡",
-            "high": "🔴"
+            "low": "ðŸŸ¢",
+            "medium": "ðŸŸ¡",
+            "high": "ðŸ”´"
         }
-        return emojis.get(priority, "⚪")
+        return emojis.get(priority, "âšª")
 
     def _status_emoji(self, status: str) -> str:
         """Get emoji for status"""
         emojis = {
-            "pending": "⏳",
-            "completed": "✅",
-            "cancelled": "❌"
+            "pending": "â³",
+            "completed": "âœ…",
+            "cancelled": "âŒ"
         }
-        return emojis.get(status, "⚪")
+        return emojis.get(status, "âšª")
 
     def _calculate_duration_str(self, task_data: Dict[str, Any]) -> str:
         """Calculate and format task duration"""
@@ -503,3 +508,4 @@ Back to: [[Tasks/{task_data['status'].capitalize()}/{self._sanitize_filename(tas
         for key, value in metadata.items():
             lines.append(f"- **{key}**: {value}")
         return "\n".join(lines)
+

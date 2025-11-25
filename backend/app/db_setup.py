@@ -44,7 +44,7 @@ def init_db():
     Creates all tables defined in models
     """
     # Import all models to ensure they're registered with Base
-    from app.models import project, terminal
+    from app.models import project, terminal, stored_event
 
     # Create all tables
     Base.metadata.create_all(bind=engine)

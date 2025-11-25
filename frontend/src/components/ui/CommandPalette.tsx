@@ -17,8 +17,8 @@ export const CommandPalette: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const { terminals, selectTerminal, createTerminal, clearTerminal } = useTerminalsStore();
-  const { theme, toggleTheme } = useTheme();
+  const { terminals, selectTerminal } = useTerminalsStore();
+  const { theme, setTheme } = useTheme();
 
   // Define commands
   const commands: Command[] = [
@@ -37,7 +37,7 @@ export const CommandPalette: React.FC = () => {
       id: 'toggle-theme',
       label: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`,
       icon: theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />,
-      action: toggleTheme
+      action: () => setTheme(theme === 'dark' ? 'light' : 'dark')
     },
     ...terminals.map(t => ({
       id: `switch-${t.id}`,

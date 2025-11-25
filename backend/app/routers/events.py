@@ -64,6 +64,69 @@ class EventIngestResponse(BaseModel):
     timestamp: str
 
 
+
+
+class VisibilityPipelineEvent(BaseModel):
+    """Event format from ruv-sparc visibility pipeline (flat format)"""
+    agent_id: str
+    agent_name: str
+    agent_role: str = "unknown"
+    operation_type: str = "tool_use"
+    operation_detail: str = ""
+    target_resource: Optional[str] = None
+    target_type: str = "unknown"
+    rbac_decision: str = "allowed"
+    rbac_reason: Optional[str] = None
+    cost_usd: float = 0.0
+    tokens_used: Optional[int] = None
+    context: Dict[str, Any] = Field(default_factory=dict)
+
+
+def convert_visibility_to_agent_event(vis_event: VisibilityPipelineEvent) -> AgentEvent:
+    """Convert visibility pipeline event to internal AgentEvent format"""
+    import uuid
+    
+    # Map operation_type to EventType
+    op_type = vis_event.operation_type.lower()
+    rbac = vis_event.rbac_decision.lower()
+    
+    if "spawn" in op_type or "task" in vis_event.context.get("tool_name", "").lower():
+        event_type = EventType.AGENT_SPAWNED
+    elif rbac == "denied":
+        event_type = EventType.OPERATION_DENIED
+    elif rbac == "allowed":
+        event_type = EventType.OPERATION_ALLOWED
+    else:
+        event_type = EventType.HOOK_EXECUTED
+    
+    # Determine status from rbac_decision
+    status = "success" if rbac == "allowed" else "denied"
+    
+    return AgentEvent(
+        event_type=event_type,
+        timestamp=datetime.now().isoformat(),
+        event_id=str(uuid.uuid4()),
+        agent_id=vis_event.agent_id,
+        agent_name=vis_event.agent_name,
+        agent_role=vis_event.agent_role,
+        operation=vis_event.operation_detail,
+        status=status,
+        metadata={
+            "target_resource": vis_event.target_resource,
+            "target_type": vis_event.target_type,
+            "rbac_decision": vis_event.rbac_decision,
+            "rbac_reason": vis_event.rbac_reason,
+            "cost_usd": vis_event.cost_usd,
+            "tokens_used": vis_event.tokens_used,
+            "session_id": vis_event.context.get("session_id"),
+            "tool_name": vis_event.context.get("tool_name"),
+            "execution_time_ms": vis_event.context.get("execution_time_ms"),
+            "artifacts": vis_event.context.get("artifacts", []),
+            "source": "ruv-sparc-visibility-pipeline"
+        }
+    )
+
+
 # ============================================================================
 # EVENT STORAGE (In-Memory for now)
 # ============================================================================
@@ -207,6 +270,52 @@ async def send_event_notifications(event: AgentEvent):
 # ============================================================================
 # EVENT RETRIEVAL ENDPOINTS
 # ============================================================================
+
+
+
+@router.post("/events/visibility/ingest")
+async def ingest_visibility_event(event: VisibilityPipelineEvent):
+    """
+    Ingest single event from ruv-sparc visibility pipeline (flat format)
+    This adapter converts the visibility pipeline format to internal AgentEvent format.
+    
+    Args:
+        event: VisibilityPipelineEvent from ruv-sparc hooks
+    
+    Returns:
+        Success response
+    """
+    try:
+        # Convert to internal format
+        agent_event = convert_visibility_to_agent_event(event)
+        
+        # Store event
+        store_event(agent_event)
+        
+        # Prepare WebSocket message
+        ws_message = {
+            "type": "agent_event",
+            "event": agent_event.dict(),
+            "source": "visibility-pipeline",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Broadcast to all connected clients
+        await connection_manager.broadcast(ws_message)
+        
+        # Send targeted notifications
+        await send_event_notifications(agent_event)
+        
+        return {
+            "success": True,
+            "event_id": agent_event.event_id,
+            "event_type": agent_event.event_type.value,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to ingest visibility event: {str(e)}")
+
 
 @router.get("/events/recent", response_model=List[AgentEvent])
 async def get_events(

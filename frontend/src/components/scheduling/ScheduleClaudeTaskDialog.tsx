@@ -69,7 +69,7 @@ export const ScheduleClaudeTaskDialog: React.FC<Props> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <div className="p-6 max-w-2xl">
         <h2 className="text-2xl font-bold mb-4">Schedule Claude Code Task</h2>
 
@@ -144,7 +144,7 @@ export const ScheduleClaudeTaskDialog: React.FC<Props> = ({
             </label>
             <Select
               value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value as any)}
+              onValueChange={(value) => setRecurrence(value as any)}
             >
               <option value="once">Once</option>
               <option value="daily">Daily</option>
@@ -160,7 +160,7 @@ export const ScheduleClaudeTaskDialog: React.FC<Props> = ({
             </label>
             <Select
               value={agentType}
-              onChange={(e) => setAgentType(e.target.value)}
+              onValueChange={(value) => setAgentType(value)}
             >
               <option value="general-purpose">General Purpose</option>
               <option value="coder">Coder</option>
